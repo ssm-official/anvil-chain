@@ -18,7 +18,7 @@ A beginner-friendly blockchain built from scratch in JavaScript. No frameworks, 
 ## Quick Start
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/anvil-chain.git
+git clone https://github.com/ssm-official/anvil-chain.git
 cd anvil-chain
 npm install
 npm start

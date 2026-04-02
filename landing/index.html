@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Anvil — A Blockchain You Can Understand</title>
+  <style>
+    /* ── Reset & Base ──────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0a0a0f;
+      --surface: #12121a;
+      --border: #1e1e2e;
+      --text: #e2e2e8;
+      --muted: #8888a0;
+      --accent: #6c5ce7;
+      --accent-glow: #6c5ce740;
+      --green: #00b894;
+      --orange: #fdcb6e;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.7;
+      overflow-x: hidden;
+    }
+
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    /* ── Animated Background ──────────────────────────────────────── */
+    .bg-grid {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      background-image:
+        linear-gradient(var(--border) 1px, transparent 1px),
+        linear-gradient(90deg, var(--border) 1px, transparent 1px);
+      background-size: 60px 60px;
+      opacity: 0.3;
+    }
+
+    /* ── Layout ───────────────────────────────────────────────────── */
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 0 24px;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* ── Nav ──────────────────────────────────────────────────────── */
+    nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 24px 0;
+    }
+
+    .logo {
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: var(--text);
+      letter-spacing: 2px;
+    }
+
+    .logo span { color: var(--accent); }
+
+    nav .links { display: flex; gap: 24px; }
+    nav .links a { color: var(--muted); font-size: 0.85rem; }
+    nav .links a:hover { color: var(--text); text-decoration: none; }
+
+    /* ── Hero ─────────────────────────────────────────────────────── */
+    .hero {
+      text-align: center;
+      padding: 100px 0 80px;
+    }
+
+    .hero h1 {
+      font-size: clamp(2.5rem, 6vw, 4rem);
+      font-weight: 800;
+      line-height: 1.1;
+      margin-bottom: 20px;
+    }
+
+    .hero h1 .highlight {
+      background: linear-gradient(135deg, var(--accent), #a29bfe);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .hero p {
+      color: var(--muted);
+      font-size: 1.05rem;
+      max-width: 560px;
+      margin: 0 auto 40px;
+    }
+
+    .hero-buttons {
+      display: flex;
+      gap: 16px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 14px 28px;
+      border-radius: 8px;
+      font-family: inherit;
+      font-size: 0.9rem;
+      font-weight: 600;
+      border: none;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: #fff;
+      box-shadow: 0 0 30px var(--accent-glow);
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 0 50px var(--accent-glow);
+      text-decoration: none;
+    }
+
+    .btn-outline {
+      background: transparent;
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+
+    .btn-outline:hover {
+      border-color: var(--accent);
+      transform: translateY(-2px);
+      text-decoration: none;
+    }
+
+    /* ── Terminal Demo ────────────────────────────────────────────── */
+    .terminal-section {
+      padding: 60px 0;
+    }
+
+    .terminal {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+    }
+
+    .terminal-bar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 14px 18px;
+      background: #0e0e16;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .terminal-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+    }
+
+    .terminal-dot.red    { background: #ff5f57; }
+    .terminal-dot.yellow { background: #febc2e; }
+    .terminal-dot.green  { background: #28c840; }
+
+    .terminal-title {
+      margin-left: 12px;
+      color: var(--muted);
+      font-size: 0.8rem;
+    }
+
+    .terminal-body {
+      padding: 24px;
+      font-size: 0.85rem;
+      line-height: 1.9;
+      min-height: 300px;
+    }
+
+    .terminal-body .prompt { color: var(--green); }
+    .terminal-body .cmd    { color: var(--text); }
+    .terminal-body .output { color: var(--muted); }
+    .terminal-body .accent { color: var(--accent); }
+    .terminal-body .warn   { color: var(--orange); }
+
+    .typed-cursor {
+      display: inline-block;
+      width: 8px;
+      height: 16px;
+      background: var(--accent);
+      animation: blink 1s step-end infinite;
+      vertical-align: text-bottom;
+      margin-left: 2px;
+    }
+
+    @keyframes blink {
+      50% { opacity: 0; }
+    }
+
+    /* ── Features ─────────────────────────────────────────────────── */
+    .features {
+      padding: 80px 0;
+    }
+
+    .features h2 {
+      text-align: center;
+      font-size: 1.8rem;
+      margin-bottom: 48px;
+    }
+
+    .feature-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 20px;
+    }
+
+    .feature-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 28px;
+      transition: border-color 0.2s;
+    }
+
+    .feature-card:hover { border-color: var(--accent); }
+
+    .feature-card .icon {
+      font-size: 1.8rem;
+      margin-bottom: 12px;
+    }
+
+    .feature-card h3 {
+      font-size: 1rem;
+      margin-bottom: 8px;
+    }
+
+    .feature-card p {
+      color: var(--muted);
+      font-size: 0.82rem;
+    }
+
+    /* ── How It Works ─────────────────────────────────────────────── */
+    .how-it-works {
+      padding: 80px 0;
+    }
+
+    .how-it-works h2 {
+      text-align: center;
+      font-size: 1.8rem;
+      margin-bottom: 48px;
+    }
+
+    .steps {
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    .step {
+      display: flex;
+      gap: 20px;
+      align-items: flex-start;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px;
+    }
+
+    .step-num {
+      flex-shrink: 0;
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 8px;
+      background: var(--accent);
+      color: #fff;
+      font-weight: 700;
+      font-size: 1rem;
+    }
+
+    .step h3 { font-size: 0.95rem; margin-bottom: 6px; }
+    .step p  { color: var(--muted); font-size: 0.82rem; }
+
+    /* ── Block Visualizer ─────────────────────────────────────────── */
+    .visualizer {
+      padding: 60px 0;
+    }
+
+    .visualizer h2 {
+      text-align: center;
+      font-size: 1.8rem;
+      margin-bottom: 48px;
+    }
+
+    .chain-vis {
+      display: flex;
+      gap: 0;
+      overflow-x: auto;
+      padding: 20px 0;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .block-vis {
+      flex-shrink: 0;
+      width: 200px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 18px;
+      font-size: 0.72rem;
+      position: relative;
+      transition: border-color 0.3s, box-shadow 0.3s;
+    }
+
+    .block-vis:hover {
+      border-color: var(--accent);
+      box-shadow: 0 0 20px var(--accent-glow);
+    }
+
+    .block-vis .block-idx {
+      font-weight: 700;
+      color: var(--accent);
+      font-size: 0.85rem;
+      margin-bottom: 10px;
+    }
+
+    .block-vis .field {
+      margin-bottom: 4px;
+      color: var(--muted);
+    }
+
+    .block-vis .field span {
+      color: var(--text);
+    }
+
+    .chain-arrow {
+      display: flex;
+      align-items: center;
+      color: var(--accent);
+      font-size: 1.5rem;
+      padding: 0 8px;
+      flex-shrink: 0;
+    }
+
+    /* ── CTA ──────────────────────────────────────────────────────── */
+    .cta {
+      text-align: center;
+      padding: 80px 0 120px;
+    }
+
+    .cta h2 {
+      font-size: 1.8rem;
+      margin-bottom: 16px;
+    }
+
+    .cta p {
+      color: var(--muted);
+      margin-bottom: 32px;
+      font-size: 0.95rem;
+    }
+
+    .cta code {
+      display: inline-block;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      padding: 12px 24px;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      margin-top: 20px;
+      color: var(--green);
+    }
+
+    /* ── Footer ───────────────────────────────────────────────────── */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 32px 0;
+      text-align: center;
+      color: var(--muted);
+      font-size: 0.8rem;
+    }
+
+    /* ── Responsive ───────────────────────────────────────────────── */
+    @media (max-width: 600px) {
+      .hero { padding: 60px 0 40px; }
+      .chain-vis { justify-content: flex-start; }
+      .chain-arrow { transform: rotate(90deg); padding: 8px 0; }
+    }
+  </style>
+</head>
+<body>
+  <div class="bg-grid"></div>
+
+  <div class="container">
+    <!-- Nav -->
+    <nav>
+      <div class="logo"><span>&gt;</span> ANVIL</div>
+      <div class="links">
+        <a href="#features">Features</a>
+        <a href="#how-it-works">How It Works</a>
+        <a href="#visualizer">Visualizer</a>
+        <a href="https://github.com/YOUR_USERNAME/anvil-chain" target="_blank">GitHub</a>
+      </div>
+    </nav>
+
+    <!-- Hero -->
+    <section class="hero">
+      <h1>Build a blockchain<br><span class="highlight">from scratch.</span></h1>
+      <p>
+        Anvil is an open-source, beginner-friendly blockchain written in plain JavaScript.
+        No frameworks. No magic. Just blocks, hashes, and proof-of-work you can actually read.
+      </p>
+      <div class="hero-buttons">
+        <a href="https://github.com/YOUR_USERNAME/anvil-chain" class="btn btn-primary" target="_blank">
+          View on GitHub
+        </a>
+        <a href="#how-it-works" class="btn btn-outline">
+          How It Works
+        </a>
+      </div>
+    </section>
+
+    <!-- Terminal Demo -->
+    <section class="terminal-section">
+      <div class="terminal">
+        <div class="terminal-bar">
+          <div class="terminal-dot red"></div>
+          <div class="terminal-dot yellow"></div>
+          <div class="terminal-dot green"></div>
+          <span class="terminal-title">anvil — node v20</span>
+        </div>
+        <div class="terminal-body" id="terminal">
+        </div>
+      </div>
+    </section>
+
+    <!-- Features -->
+    <section class="features" id="features">
+      <h2>What's Inside</h2>
+      <div class="feature-grid">
+        <div class="feature-card">
+          <div class="icon">&#x26cf;</div>
+          <h3>Proof-of-Work Mining</h3>
+          <p>Mine blocks with configurable difficulty. Watch the nonce increment until a valid hash is found.</p>
+        </div>
+        <div class="feature-card">
+          <div class="icon">&#x1f511;</div>
+          <h3>Digital Signatures</h3>
+          <p>Ed25519 key pairs sign every transaction. Cryptographic proof that you authorized the transfer.</p>
+        </div>
+        <div class="feature-card">
+          <div class="icon">&#x1f4b0;</div>
+          <h3>Native Coin</h3>
+          <p>Miners earn block rewards. Send coins between wallets. Track balances across the chain.</p>
+        </div>
+        <div class="feature-card">
+          <div class="icon">&#x1f517;</div>
+          <h3>Chain Validation</h3>
+          <p>Every block links to the last. Tamper with one and the entire chain breaks — by design.</p>
+        </div>
+        <div class="feature-card">
+          <div class="icon">&#x1f310;</div>
+          <h3>Multi-Node Network</h3>
+          <p>Run multiple nodes locally. They share blocks, validate chains, and reach consensus.</p>
+        </div>
+        <div class="feature-card">
+          <div class="icon">&#x2699;</div>
+          <h3>Fully Customizable</h3>
+          <p>Change the coin name, mining difficulty, block reward, and block size from a single config file.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- How It Works -->
+    <section class="how-it-works" id="how-it-works">
+      <h2>How It Works</h2>
+      <div class="steps">
+        <div class="step">
+          <div class="step-num">1</div>
+          <div>
+            <h3>Create a Wallet</h3>
+            <p>Generate an Ed25519 key pair. Your public key is your address. Your private key signs transactions.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">2</div>
+          <div>
+            <h3>Send a Transaction</h3>
+            <p>Sign a transfer with your private key. It enters the pending pool, waiting to be included in a block.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">3</div>
+          <div>
+            <h3>Mine a Block</h3>
+            <p>Pick up pending transactions, add a coinbase reward, and find a nonce that produces a hash with enough leading zeros.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">4</div>
+          <div>
+            <h3>Chain Grows</h3>
+            <p>The new block links to the previous one via its hash. Any tampering would invalidate every block that follows.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">5</div>
+          <div>
+            <h3>Network Consensus</h3>
+            <p>Nodes share their chains. The longest valid chain wins — this is how the network agrees on truth.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Block Visualizer -->
+    <section class="visualizer" id="visualizer">
+      <h2>Live Chain Visualizer</h2>
+      <div class="chain-vis" id="chainVis">
+        <!-- Blocks are generated by JS below -->
+      </div>
+      <p style="text-align:center;color:var(--muted);margin-top:20px;font-size:0.82rem;">
+        Blocks are simulated for demonstration. Run the real chain to see your own!
+      </p>
+    </section>
+
+    <!-- CTA -->
+    <section class="cta">
+      <h2>Start Building</h2>
+      <p>Clone the repo, install one dependency, and you have a working blockchain.</p>
+      <div class="hero-buttons">
+        <a href="https://github.com/YOUR_USERNAME/anvil-chain" class="btn btn-primary" target="_blank">
+          View on GitHub
+        </a>
+      </div>
+      <code>git clone https://github.com/YOUR_USERNAME/anvil-chain.git && cd anvil-chain && npm install && npm start</code>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+      <p>Anvil is open-source under the MIT License. Built for learning, not production.</p>
+    </footer>
+  </div>
+
+  <!-- ── Scripts ──────────────────────────────────────────────────── -->
+  <script>
+    // ================================================================
+    // Terminal typing animation
+    // ================================================================
+    const lines = [
+      { type: 'prompt', text: 'anvil (no wallet) > ' },
+      { type: 'cmd',    text: 'create-wallet' },
+      { type: 'output', text: '' },
+      { type: 'output', text: '  New Wallet Created' },
+      { type: 'accent', text: '  Address: 302a300506032b6570...' },
+      { type: 'output', text: '' },
+      { type: 'prompt', text: 'anvil (302a300506032b65...) > ' },
+      { type: 'cmd',    text: 'mine' },
+      { type: 'output', text: '' },
+      { type: 'output', text: '  Mining block #1...' },
+      { type: 'warn',   text: '  Block mined! Nonce: 1847 | Time: 0.42s' },
+      { type: 'accent', text: '  Hash: 000a7f3c9b2e1d4f8a6c...' },
+      { type: 'output', text: '  You earned 50 ANV for mining this block!' },
+      { type: 'output', text: '' },
+      { type: 'prompt', text: 'anvil (302a300506032b65...) > ' },
+      { type: 'cmd',    text: 'balance' },
+      { type: 'output', text: '' },
+      { type: 'accent', text: '  Balance: 50 ANV' },
+      { type: 'output', text: '' },
+      { type: 'prompt', text: 'anvil (302a300506032b65...) > ' },
+      { type: 'cmd',    text: 'validate' },
+      { type: 'output', text: '' },
+      { type: 'accent', text: '  Chain is VALID' },
+    ];
+
+    const terminal = document.getElementById('terminal');
+    let lineIdx = 0;
+
+    function typeNextLine() {
+      if (lineIdx >= lines.length) {
+        // Add blinking cursor at end
+        const cursor = document.createElement('span');
+        cursor.className = 'typed-cursor';
+        terminal.appendChild(cursor);
+        return;
+      }
+
+      const line = lines[lineIdx];
+      const div = document.createElement('div');
+      const span = document.createElement('span');
+      span.className = line.type;
+
+      if (line.type === 'cmd') {
+        // Type command character by character
+        let charIdx = 0;
+        const prevLine = terminal.lastElementChild;
+        const interval = setInterval(() => {
+          if (charIdx < line.text.length) {
+            span.textContent += line.text[charIdx];
+            charIdx++;
+          } else {
+            clearInterval(interval);
+            lineIdx++;
+            setTimeout(typeNextLine, 200);
+          }
+        }, 50);
+        if (prevLine) {
+          prevLine.appendChild(span);
+        } else {
+          div.appendChild(span);
+          terminal.appendChild(div);
+        }
+        return;
+      }
+
+      span.textContent = line.text;
+      div.appendChild(span);
+      terminal.appendChild(div);
+      lineIdx++;
+
+      const delay = line.type === 'prompt' ? 600 : 80;
+      setTimeout(typeNextLine, delay);
+    }
+
+    // Start after a short delay
+    setTimeout(typeNextLine, 800);
+
+    // ================================================================
+    // Block Visualizer
+    // ================================================================
+    function shortHash() {
+      const chars = '0123456789abcdef';
+      let h = '';
+      for (let i = 0; i < 8; i++) h += chars[Math.floor(Math.random() * 16)];
+      return h + '...';
+    }
+
+    function createBlockEl(index, prevHash) {
+      const hash = '000' + shortHash();
+      const div = document.createElement('div');
+      div.className = 'block-vis';
+      div.innerHTML = `
+        <div class="block-idx">Block #${index}</div>
+        <div class="field">Nonce: <span>${Math.floor(Math.random() * 5000)}</span></div>
+        <div class="field">Tx: <span>${index === 0 ? 1 : Math.floor(Math.random() * 4) + 1}</span></div>
+        <div class="field">Prev: <span>${prevHash}</span></div>
+        <div class="field">Hash: <span>${hash}</span></div>
+      `;
+      return { el: div, hash };
+    }
+
+    const chainVis = document.getElementById('chainVis');
+    let prevHash = '00000000...';
+
+    for (let i = 0; i < 4; i++) {
+      if (i > 0) {
+        const arrow = document.createElement('div');
+        arrow.className = 'chain-arrow';
+        arrow.innerHTML = '&#x2192;';
+        chainVis.appendChild(arrow);
+      }
+      const { el, hash } = createBlockEl(i, prevHash);
+      chainVis.appendChild(el);
+      prevHash = hash;
+    }
+  </script>
+</body>
+</html>

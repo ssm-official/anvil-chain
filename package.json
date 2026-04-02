@@ -1,0 +1,22 @@
+{
+  "name": "anvil-chain",
+  "version": "1.0.0",
+  "description": "A beginner-friendly blockchain built from scratch for learning. Mine blocks, send coins, and understand how blockchains work.",
+  "main": "src/cli/index.js",
+  "bin": {
+    "anvil": "./src/cli/index.js"
+  },
+  "scripts": {
+    "start": "node src/cli/index.js",
+    "node": "node src/network/node.js",
+    "node:3001": "PORT=3001 node src/network/node.js",
+    "node:3002": "PORT=3002 PEERS=http://localhost:3001 node src/network/node.js",
+    "node:3003": "PORT=3003 PEERS=http://localhost:3001,http://localhost:3002 node src/network/node.js",
+    "landing": "npx serve landing -p 8080"
+  },
+  "keywords": ["blockchain", "educational", "proof-of-work", "cryptocurrency"],
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.18.2"
+  }
+}

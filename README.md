@@ -155,7 +155,7 @@ Anvil is an **educational sandbox**. The ANV coin has **no real-world monetary v
 
 ## Links
 
-- [Landing Page](https://ssm-official.github.io/anvil-chain/)
+- [Live Site](https://ssm-official.github.io/anvil-chain/)
 - [Twitter / X](https://x.com/S_S_M_X)
 
 ## License

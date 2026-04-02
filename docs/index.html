@@ -176,6 +176,30 @@
     .copy-btn:hover{border-color:var(--accent);color:var(--text);background:var(--accent)}
     .copy-btn.copied{border-color:var(--green);color:var(--green);background:rgba(52,211,153,.1)}
 
+    /* interactive terminal */
+    .live-terminal{background:var(--surface);border:1px solid var(--border);border-radius:16px;overflow:hidden;box-shadow:0 40px 100px rgba(0,0,0,.6),0 0 60px var(--glow);display:flex;flex-direction:column;max-height:520px}
+    .live-terminal .terminal-body{flex:1;overflow-y:auto;padding:20px 24px;font-size:.78rem;line-height:1.8;scroll-behavior:smooth}
+    .live-terminal .terminal-body .line{margin-bottom:2px}
+    .live-terminal .terminal-body .t-green{color:var(--green)}.live-terminal .terminal-body .t-cyan{color:var(--cyan)}.live-terminal .terminal-body .t-purple{color:var(--accent2)}.live-terminal .terminal-body .t-yellow{color:var(--orange)}.live-terminal .terminal-body .t-red{color:var(--red)}.live-terminal .terminal-body .t-dim{color:var(--dim)}.live-terminal .terminal-body .t-muted{color:var(--muted)}.live-terminal .terminal-body .t-bold{font-weight:700}
+    .live-terminal .terminal-body .t-input{color:var(--text)}
+    .term-input-wrap{display:flex;align-items:center;gap:8px;padding:12px 20px;border-top:1px solid var(--border);background:var(--surface2)}
+    .term-prompt{color:var(--accent2);font-size:.75rem;font-weight:700;white-space:nowrap;flex-shrink:0}
+    .term-input{flex:1;background:none;border:none;color:var(--text);font-family:inherit;font-size:.78rem;outline:none;caret-color:var(--accent)}
+    .term-input::placeholder{color:var(--dim)}
+    .term-hint{font-size:.62rem;color:var(--dim);padding:6px 20px;border-top:1px solid var(--border);background:var(--bg);text-align:center}
+
+    /* startup modal */
+    .startup-overlay{position:absolute;inset:0;background:rgba(5,5,8,.95);display:flex;align-items:center;justify-content:center;z-index:10;border-radius:16px}
+    .startup-box{text-align:center;padding:40px}
+    .startup-box h3{font-size:1rem;margin-bottom:8px;color:var(--text)}
+    .startup-box p{color:var(--muted);font-size:.75rem;margin-bottom:24px}
+    .startup-btns{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+    .startup-btn{padding:12px 24px;border-radius:10px;font-family:inherit;font-size:.78rem;font-weight:700;cursor:pointer;transition:all .2s;border:1px solid var(--border);background:var(--surface2);color:var(--text)}
+    .startup-btn:hover{border-color:var(--accent);transform:translateY(-2px)}
+    .startup-btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+    .startup-btn.primary:hover{box-shadow:0 0 30px var(--glow)}
+    .startup-btn:disabled{opacity:.4;cursor:default;transform:none}
+
     /* footer */
     footer{border-top:1px solid var(--border);padding:48px 0}
     .footer-inner{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:20px}
@@ -223,7 +247,7 @@
   <div class="nav-wrap" id="navWrap"><div class="container"><nav>
     <a href="#" class="logo"><span class="logo-text">ANVIL</span></a>
     <div class="nav-links">
-      <a href="#features">Features</a><a href="#how-it-works">How It Works</a><a href="#code">Source</a><a href="terms.html">Terms</a>
+      <a href="#playground">Try It</a><a href="#features">Features</a><a href="#how-it-works">How It Works</a><a href="terms.html">Terms</a>
       <a href="https://github.com/ssm-official/anvil-chain" target="_blank" class="nav-gh"><svg viewBox="0 0 16 16"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg><span>GitHub</span></a>
     </div>
   </nav></div></div>
@@ -241,8 +265,27 @@
     </section>
     <div class="hash-ticker"><div class="hash-track" id="hashTrack"></div></div>
     <div class="hash-counter reveal"><div class="hash-counter-label">Live SHA-256 Output</div><div class="hash-counter-value" id="liveHash">0000000000000000000000000000000000000000000000000000000000000000</div></div>
-    <section class="terminal-section reveal-scale">
-      <div class="terminal"><div class="terminal-bar"><div class="terminal-dot r"></div><div class="terminal-dot y"></div><div class="terminal-dot g"></div><span class="terminal-title">anvil-chain &mdash; interactive CLI</span></div><div class="terminal-body" id="terminal"></div></div>
+    <section class="terminal-section reveal-scale" id="playground">
+      <div class="section-center"><span class="section-label">Try It</span><h2 class="section-title">Live Playground</h2><p class="section-sub">A real blockchain running in your browser. Type commands below.</p></div>
+      <div class="live-terminal" style="position:relative">
+        <div class="terminal-bar"><div class="terminal-dot r"></div><div class="terminal-dot y"></div><div class="terminal-dot g"></div><span class="terminal-title">anvil-chain &mdash; live sandbox</span></div>
+        <div class="startup-overlay" id="startupOverlay">
+          <div class="startup-box">
+            <h3>ANVIL</h3>
+            <p>A sandbox recreation of Bitcoin's core mechanics.</p>
+            <div class="startup-btns">
+              <button class="startup-btn primary" id="btnNew" onclick="anvilStart('new')">New Blockchain</button>
+              <button class="startup-btn" id="btnResume" onclick="anvilStart('resume')">Resume Saved</button>
+            </div>
+          </div>
+        </div>
+        <div class="terminal-body" id="termOutput"></div>
+        <div class="term-input-wrap">
+          <span class="term-prompt" id="termPrompt">anvil ></span>
+          <input class="term-input" id="termInput" type="text" placeholder="Type a command... (try /help)" autocomplete="off" spellcheck="false" disabled>
+        </div>
+        <div class="term-hint">Press Enter to run. /help for commands. /save to save. /file to see save location. Data saved in your browser.</div>
+      </div>
     </section>
     <section class="features reveal" id="features">
       <div class="section-center"><span class="section-label">Based on Bitcoin</span><h2 class="section-title">Same algorithms, readable code</h2><p class="section-sub">Bitcoin's core mechanics, simplified to under 1,000 lines of JavaScript.</p></div>
@@ -315,8 +358,299 @@
   // HASH TICKER
   (function(){const t=document.getElementById('hashTrack'),h='0123456789abcdef';function r(){let s='';for(let i=0;i<64;i++)s+=h[Math.floor(Math.random()*16)];return s}let html='';for(let i=0;i<24;i++)html+=`<span class="hash-item"><span class="hash-label">SHA256</span>${r()}</span>`;t.innerHTML=html+html})();
 
-  // TERMINAL
-  (function(){const lines=[{t:'prompt',v:'anvil [1 blocks] (no wallet) > '},{t:'cmd',v:'/wallet create'},{t:'output',v:''},{t:'accent',v:'  Wallet Created'},{t:'output',v:'  Address: 302a300506032b65..'},{t:'output',v:''},{t:'prompt',v:'anvil [1 blocks] (302a300506032b65..) > '},{t:'cmd',v:'/mine'},{t:'output',v:''},{t:'output',v:'  Finding a nonce that makes the hash start with 000...'},{t:'output',v:'  (In real Bitcoin, this takes ~10 min with billions in hardware)'},{t:'output',v:'  Mining block #1...'},{t:'warn',v:'  Block mined! Nonce: 1847 | Time: 0.42s'},{t:'hash-out',v:'  Hash: 000a7f3c9b2e1d4f8a6c...'},{t:'accent',v:'  Reward: +50 ANV (coinbase transaction)'},{t:'output',v:''},{t:'prompt',v:'anvil [2 blocks] (302a300506032b65..) > '},{t:'cmd',v:'/balance'},{t:'output',v:''},{t:'accent',v:'  Balance: 50 ANV'},{t:'output',v:''},{t:'prompt',v:'anvil [2 blocks] (302a300506032b65..) > '},{t:'cmd',v:'/explain reward'},{t:'output',v:''},{t:'output',v:'  What is the block reward?'},{t:'output',v:'  The block reward is new coins given to the miner.'},{t:'accent',v:'  Bitcoin started at 50 BTC — same as Anvil!'},{t:'output',v:'  Bitcoin halves every 210,000 blocks (~4 years).'},{t:'output',v:'  Current: 3.125 BTC after 4 halvings.'},{t:'output',v:''},{t:'prompt',v:'anvil [2 blocks] (302a300506032b65..) > '},{t:'cmd',v:'/info'},{t:'output',v:''},{t:'output',v:'  Coin: Anvil (ANV)'},{t:'output',v:'  Based on: Bitcoin (simplified for learning)'},{t:'output',v:'  Blocks: 2'},{t:'accent',v:'  Consensus: Longest valid chain (Nakamoto)'}];const el=document.getElementById('terminal');let i=0;function next(){if(i>=lines.length){const cur=document.createElement('span');cur.className='typed-cursor';el.appendChild(cur);return}const l=lines[i],div=document.createElement('div'),span=document.createElement('span');span.className=l.t;if(l.t==='cmd'){let ci=0;const prev=el.lastElementChild,iv=setInterval(()=>{if(ci<l.v.length){span.textContent+=l.v[ci];ci++}else{clearInterval(iv);i++;setTimeout(next,300)}},40);if(prev)prev.appendChild(span);else{div.appendChild(span);el.appendChild(div)}return}span.textContent=l.v;div.appendChild(span);el.appendChild(div);i++;setTimeout(next,l.t==='prompt'?700:55)}setTimeout(next,1200)})();
+  // ================================================================
+  // INTERACTIVE BLOCKCHAIN TERMINAL
+  // Full browser-based blockchain with save/resume
+  // ================================================================
+  const ANVIL=(function(){
+    const DIFF=2,REWARD=50,SYM='ANV',SAVE_KEY='anvil_chain_save';
+    const out=document.getElementById('termOutput');
+    const inp=document.getElementById('termInput');
+    const promptEl=document.getElementById('termPrompt');
+    let chain=[],pending=[],walletAddr=null,history=[],histIdx=-1;
+
+    // --- SHA-256 in browser ---
+    async function sha256(text){const d=new TextEncoder().encode(text);const b=await crypto.subtle.digest('SHA-256',d);return Array.from(new Uint8Array(b)).map(x=>x.toString(16).padStart(2,'0')).join('')}
+    function short(s){return s&&s.length>16?s.substring(0,16)+'..':s||'none'}
+
+    // --- Output ---
+    function print(text,cls){const d=document.createElement('div');d.className='line '+(cls||'');d.textContent=text;out.appendChild(d);out.scrollTop=out.scrollHeight}
+    function printH(text){print(text,'t-bold t-purple')}
+    function printOk(text){print(text,'t-green')}
+    function printW(text){print(text,'t-yellow')}
+    function printErr(text){print(text,'t-red')}
+    function printD(text){print(text,'t-dim')}
+    function printC(text){print(text,'t-cyan')}
+    function printM(text){print(text,'t-muted')}
+    function gap(){print('')}
+
+    function updatePrompt(){
+      const w=walletAddr?short(walletAddr):'no wallet';
+      promptEl.textContent=`anvil [${chain.length}] (${w}) >`
+    }
+
+    // --- Genesis ---
+    function createGenesis(){
+      return{index:0,timestamp:0,transactions:[{sender:'COINBASE',receiver:'genesis',amount:0}],previousHash:'0',nonce:0,hash:'genesis_block_hash'}
+    }
+
+    // --- Mining ---
+    async function mineBlock(txs){
+      const prev=chain[chain.length-1];
+      const block={index:chain.length,timestamp:Date.now(),transactions:txs,previousHash:prev.hash,nonce:0,hash:''};
+      const target='0'.repeat(DIFF);
+      const t0=performance.now();
+      let n=0;
+      while(true){
+        const data=''+block.index+block.timestamp+JSON.stringify(block.transactions)+block.previousHash+n;
+        const h=await sha256(data);
+        if(h.substring(0,DIFF)===target){block.nonce=n;block.hash=h;break}
+        n++;
+        if(n%300===0)await new Promise(r=>setTimeout(r,0));
+      }
+      const elapsed=((performance.now()-t0)/1000).toFixed(2);
+      chain.push(block);
+      return{block,elapsed}
+    }
+
+    function getBalance(addr){
+      let bal=0;
+      for(const b of chain)for(const tx of b.transactions){
+        if(tx.receiver===addr)bal+=tx.amount;
+        if(tx.sender===addr)bal-=tx.amount;
+      }
+      return bal
+    }
+
+    // --- Save/Load ---
+    function saveState(){
+      const data={chain,pending,walletAddr,savedAt:Date.now()};
+      try{localStorage.setItem(SAVE_KEY,JSON.stringify(data));return true}catch(e){return false}
+    }
+    function loadState(){
+      try{const raw=localStorage.getItem(SAVE_KEY);if(!raw)return null;return JSON.parse(raw)}catch(e){return null}
+    }
+    function hasSave(){return!!localStorage.getItem(SAVE_KEY)}
+
+    // --- Explain ---
+    const explains={
+      mine:['What is mining?','','Mining adds new blocks to the blockchain by finding a nonce that makes','the block hash start with enough zeros (proof-of-work).','','In Bitcoin: requires ASICs ($5K-$15K each), ~10 minutes per block,','entire network does ~600 exahashes/second. Miners compete globally.','','In this sandbox: takes <1 second, difficulty is low so you can','watch the algorithm work. Same SHA-256 algorithm, just easier.'],
+      wallet:['What is a wallet?','','A wallet is a cryptographic key pair:','  Public key = your address (share freely)','  Private key = your secret (signs transactions)','','In Bitcoin: uses ECDSA (secp256k1), addresses are Base58/Bech32','encoded. Hardware wallets keep keys offline.','','In this sandbox: simplified key generation. Same idea:','private key proves ownership, public key is your identity.'],
+      transaction:['What is a transaction?','','A signed instruction: "I authorize sending X coins to address Y."','The signature proves the sender authorized it.','','In Bitcoin: uses the UTXO model (unspent transaction outputs).','Each tx consumes previous outputs and creates new ones.','','In this sandbox: uses account balances (simpler).','Same core concept: cryptographic authorization.'],
+      block:['What is a block?','','A container bundling transactions + metadata:','  index, timestamp, transactions, previousHash, nonce, hash','','Each block stores the hash of the previous block, creating a chain.','Change anything and the hash changes, breaking every block after it.','','In Bitcoin: ~2000-3000 tx per block, every ~10 minutes.','Has Merkle tree, 80-byte header. ~600GB total chain.'],
+      difficulty:['What is difficulty?','','Controls how hard mining is. The hash must start with N zeros.','','  Difficulty 1: ~1 in 16 hashes (instant)','  Difficulty 2: ~1 in 256 hashes (this sandbox)','  Bitcoin:      ~1 in 2^76 hashes (~10 min for entire network)','','Bitcoin adjusts difficulty every 2016 blocks to maintain ~10 min.','This sandbox uses fixed difficulty '+DIFF+'.'],
+      reward:['What is the block reward?','','New coins created and given to the miner. The "coinbase" transaction.','This is the ONLY way new coins enter circulation.','','Bitcoin started at 50 BTC per block in 2009 (same as Anvil!).','Halves every 210,000 blocks: 50 > 25 > 12.5 > 6.25 > 3.125 BTC.','Total supply capped at 21,000,000 BTC. Runs out around year 2140.','','This sandbox: fixed '+REWARD+' '+SYM+' per block, no halving.'],
+      hash:['What is a hash?','','SHA-256 takes any input and produces a fixed 64-character hex string.','Same input = same output. Tiny change = completely different hash.','','This is what makes blockchains tamper-evident:','change one byte in a block and its hash changes completely,','which breaks the link in the next block, and the next...','','Both Bitcoin and this sandbox use SHA-256.'],
+      consensus:['What is Nakamoto consensus?','','How a decentralized network agrees on truth:','  1. Anyone can propose a block by mining it','  2. Nodes accept the longest valid chain','  3. Forks resolve when one chain gets ahead','','Requires >50% of hash power to attack (economically infeasible).','','Bitcoin: ~20,000 nodes worldwide, P2P gossip protocol.','This sandbox: local HTTP nodes, same longest-chain rule.'],
+      genesis:['What is the genesis block?','','Block #0 — the very first block. No predecessor.','','Bitcoin genesis block: mined January 3, 2009 by Satoshi Nakamoto.','Contains: "The Times 03/Jan/2009 Chancellor on brink of','second bailout for banks" — proving it was created after that date.','','The 50 BTC reward in the genesis block is unspendable (by design).'],
+    };
+
+    // --- Command Handler ---
+    async function handleCmd(raw){
+      const trimmed=raw.trim();if(!trimmed)return;
+      print(`> ${trimmed}`,'t-input');
+      const parts=trimmed.replace(/^\//,'').split(/\s+/);
+      const cmd=parts[0]?.toLowerCase();
+      const args=parts.slice(1);
+
+      switch(cmd){
+        case 'help':case 'h':
+          printH('ANVIL — Commands');printD('────────────────────────────────────');
+          gap();printC('  /wallet create   Generate a new wallet');
+          printC('  /balance         Check your balance');
+          printC('  /send <amt>      Send coins (to a random test address)');
+          printC('  /mine            Mine a block');
+          printC('  /chain           View the blockchain');
+          printC('  /pending         View pending transactions');
+          printC('  /info            Chain statistics');
+          gap();printC('  /explain <topic> Learn how Bitcoin does it');
+          printC('  /explain list    Show all topics');
+          gap();printC('  /save            Save chain to browser storage');
+          printC('  /file            Show save location');
+          printC('  /reset           Delete saved data and start fresh');
+          printC('  /clear           Clear terminal');
+          gap();break;
+
+        case 'wallet':
+          if(args[0]==='create'||!args[0]){
+            walletAddr='anvil_'+await sha256('wallet_'+Date.now()+'_'+Math.random());
+            walletAddr=walletAddr.substring(0,40);
+            printH('Wallet Created');
+            printM('  Address: '+short(walletAddr));
+            printD('  Full: '+walletAddr);
+            printW('  Your private key would be here in a real system. Never share it.');
+            gap();printD('  Run /explain wallet to learn how Bitcoin wallets work.');
+          }else if(args[0]==='info'){
+            if(!walletAddr){printErr('No wallet. Run /wallet create');break}
+            printH('Wallet');printM('  Address: '+walletAddr);printM('  Balance: '+getBalance(walletAddr)+' '+SYM);
+          }
+          break;
+
+        case 'balance':case 'bal':
+          if(!walletAddr){printErr('No wallet. Run /wallet create');break}
+          printH('Balance');printM('  Address: '+short(walletAddr));
+          printOk('  '+getBalance(walletAddr)+' '+SYM);gap();break;
+
+        case 'mine':
+          if(!walletAddr){printErr('No wallet. Run /wallet create');break}
+          printH('Mining');
+          printD('  Finding nonce where SHA-256 starts with '+'0'.repeat(DIFF)+'...');
+          printD('  (In real Bitcoin, this takes ~10 min with specialized hardware)');gap();
+          const coinbase={sender:'COINBASE',receiver:walletAddr,amount:REWARD};
+          const txs=[coinbase,...pending];pending=[];
+          const{block,elapsed}=await mineBlock(txs);
+          printW('  Block mined! Nonce: '+block.nonce+' | Time: '+elapsed+'s');
+          printC('  Hash: '+block.hash.substring(0,32)+'..');
+          printOk('  Reward: +'+REWARD+' '+SYM+' (coinbase transaction)');
+          gap();printD('  Run /explain mine to learn how Bitcoin mining works.');
+          updatePrompt();autoSave();break;
+
+        case 'send':
+          if(!walletAddr){printErr('No wallet. Run /wallet create');break}
+          const amt=parseFloat(args[0]);
+          if(isNaN(amt)||amt<=0){printErr('Usage: /send <amount>');break}
+          const bal=getBalance(walletAddr);
+          const pendingOut=pending.filter(t=>t.sender===walletAddr).reduce((s,t)=>s+t.amount,0);
+          if(bal-pendingOut<amt){printErr('Insufficient balance. Available: '+(bal-pendingOut)+' '+SYM);break}
+          const toAddr='anvil_'+await sha256('recv_'+Date.now()+'_'+Math.random());
+          const to=toAddr.substring(0,40);
+          pending.push({sender:walletAddr,receiver:to,amount:amt});
+          printOk('Transaction queued: '+amt+' '+SYM+' -> '+short(to));
+          printD('  Waiting to be included in a mined block.');gap();break;
+
+        case 'chain':
+          printH('Blockchain ('+chain.length+' blocks)');
+          for(const b of chain){
+            gap();printC('  Block #'+b.index);printD('  '+'-'.repeat(30));
+            printM('  Time:  '+(b.timestamp?new Date(b.timestamp).toISOString():'genesis'));
+            printM('  Tx:    '+b.transactions.length);
+            printM('  Nonce: '+b.nonce);
+            printM('  Hash:  '+short(b.hash));
+            printM('  Prev:  '+short(b.previousHash));
+            for(const tx of b.transactions){
+              const s=tx.sender==='COINBASE'?'COINBASE':short(tx.sender);
+              print('    '+s+' -> '+short(tx.receiver)+' '+tx.amount+' '+SYM,'t-muted');
+            }
+          }gap();break;
+
+        case 'pending':case 'mempool':
+          printH('Pending Transactions ('+pending.length+')');
+          if(!pending.length){printD('  Mempool is empty.');printD('  (In Bitcoin, the mempool typically has thousands of unconfirmed tx.)');break}
+          for(const tx of pending)printM('  '+short(tx.sender)+' -> '+short(tx.receiver)+' '+tx.amount+' '+SYM);
+          gap();break;
+
+        case 'info':
+          printH('Anvil Info');
+          printM('  Coin:      Anvil ('+SYM+')');printM('  Based on:  Bitcoin (simplified for learning)');
+          printM('  Blocks:    '+chain.length);printM('  Difficulty: '+DIFF);
+          printM('  Reward:    '+REWARD+' '+SYM);printM('  Pending:   '+pending.length);
+          printM('  Hashing:   SHA-256');printM('  Consensus: Longest valid chain (Nakamoto)');
+          gap();break;
+
+        case 'validate':
+          printH('Chain Validation');
+          let valid=true;
+          for(let i=1;i<chain.length;i++){
+            if(chain[i].previousHash!==chain[i-1].hash){valid=false;printErr('  Block #'+i+' previousHash mismatch!');break}
+          }
+          if(valid)printOk('  Chain is VALID. No tampering detected.');
+          else printErr('  Chain is INVALID.');
+          gap();break;
+
+        case 'save':
+          if(saveState())printOk('Chain saved to browser localStorage.');
+          else printErr('Save failed. localStorage may be full.');
+          gap();break;
+
+        case 'file':
+          printH('Save Location');
+          printM('  Storage: Browser localStorage');
+          printM('  Key:     '+SAVE_KEY);
+          printM('  Domain:  '+window.location.origin);
+          const saved=loadState();
+          if(saved){
+            printM('  Saved:   '+new Date(saved.savedAt).toISOString());
+            printM('  Blocks:  '+saved.chain.length);
+            const bytes=new Blob([localStorage.getItem(SAVE_KEY)]).size;
+            printM('  Size:    '+(bytes/1024).toFixed(1)+' KB');
+          }else{printD('  No save found.')}
+          gap();printD('  Data is stored in your browser. Clearing browser data will delete it.');
+          printD('  To export: open browser DevTools > Application > localStorage > '+SAVE_KEY);
+          gap();break;
+
+        case 'reset':
+          localStorage.removeItem(SAVE_KEY);
+          chain=[createGenesis()];pending=[];walletAddr=null;
+          printOk('Save data deleted. Chain reset to genesis.');updatePrompt();gap();break;
+
+        case 'explain':case 'ex':case 'learn':
+          const topic=args[0]?.toLowerCase();
+          if(!topic||topic==='list'){
+            printH('Explain Topics');printD('  Type /explain <topic> to learn how Bitcoin does it.');gap();
+            for(const t of Object.keys(explains))printC('  /explain '+t);
+            gap();break;
+          }
+          if(explains[topic]){gap();for(const line of explains[topic])line?printM('  '+line):gap();gap()}
+          else{printErr('Unknown topic: '+topic);printD('  Available: '+Object.keys(explains).join(', '))}
+          break;
+
+        case 'clear':case 'cls':out.innerHTML='';break;
+
+        default:printErr('Unknown command: '+cmd);printD('  Type /help for commands.');gap();
+      }
+    }
+
+    function autoSave(){try{saveState()}catch(e){}}
+
+    // --- Input handling ---
+    inp.addEventListener('keydown',async function(e){
+      if(e.key==='Enter'){
+        const val=inp.value;inp.value='';
+        if(val.trim())history.unshift(val);histIdx=-1;
+        await handleCmd(val);
+        updatePrompt();
+      }else if(e.key==='ArrowUp'){
+        e.preventDefault();
+        if(history.length>0&&histIdx<history.length-1){histIdx++;inp.value=history[histIdx]}
+      }else if(e.key==='ArrowDown'){
+        e.preventDefault();
+        if(histIdx>0){histIdx--;inp.value=history[histIdx]}else{histIdx=-1;inp.value=''}
+      }
+    });
+
+    // --- Startup ---
+    function start(mode){
+      document.getElementById('startupOverlay').style.display='none';
+      inp.disabled=false;inp.focus();
+
+      if(mode==='resume'){
+        const saved=loadState();
+        if(saved&&saved.chain){
+          chain=saved.chain;pending=saved.pending||[];walletAddr=saved.walletAddr;
+          printOk('Resumed saved blockchain.');
+          printM('  Blocks: '+chain.length);
+          if(walletAddr)printM('  Wallet: '+short(walletAddr));
+          gap();
+        }else{
+          chain=[createGenesis()];
+          printW('No save found. Starting fresh.');gap();
+        }
+      }else{
+        chain=[createGenesis()];pending=[];walletAddr=null;
+        printOk('New blockchain initialized. Genesis block created.');gap();
+      }
+
+      printD('  Type /help for commands. Type /explain list to learn.');gap();
+      updatePrompt();
+    }
+
+    // Check if save exists for resume button
+    if(!hasSave())document.getElementById('btnResume').disabled=true;
+
+    return{start}
+  })();
+
+  function anvilStart(mode){ANVIL.start(mode)}
 
   // CODE EXPLORER
   (function(){function ln(ls){return ls.map((l,i)=>`<div class="code-line"><span class="code-ln">${i+1}</span><span>${l}</span></div>`).join('')}const s={block:ln(['<span class="cmt">// A block: transactions + metadata + proof-of-work</span>','','<span class="kw">class</span> <span class="fn">Block</span> {','  <span class="fn">constructor</span>(index, transactions, previousHash) {','    <span class="kw">this</span>.index        = index;','    <span class="kw">this</span>.timestamp    = Date.<span class="fn">now</span>();','    <span class="kw">this</span>.transactions = transactions;','    <span class="kw">this</span>.previousHash = previousHash;','    <span class="kw">this</span>.nonce        = <span class="num">0</span>;','    <span class="kw">this</span>.hash         = <span class="kw">this</span>.<span class="fn">computeHash</span>();','  }','','  <span class="cmt">// SHA-256 of ALL fields</span>','  <span class="fn">computeHash</span>() {','    <span class="kw">const</span> data = <span class="kw">this</span>.index + <span class="kw">this</span>.timestamp +','      JSON.<span class="fn">stringify</span>(<span class="kw">this</span>.transactions) +','      <span class="kw">this</span>.previousHash + <span class="kw">this</span>.nonce;','    <span class="kw">return</span> <span class="fn">sha256</span>(data);','  }','}']),mine:ln(['<span class="cmt">// Proof-of-Work: brute-force a valid hash</span>','','<span class="fn">mine</span>(difficulty) {','  <span class="kw">const</span> target = <span class="str">\'0\'</span>.<span class="fn">repeat</span>(difficulty);','','  <span class="kw">while</span> (<span class="kw">this</span>.hash.<span class="fn">substring</span>(<span class="num">0</span>, difficulty) !== target) {','    <span class="kw">this</span>.nonce++;','    <span class="kw">this</span>.hash = <span class="kw">this</span>.<span class="fn">computeHash</span>();','  }','','  <span class="cmt">//   nonce 0:    "8f3a2b..."  miss</span>','  <span class="cmt">//   nonce 1847: "000a7f..."  HIT!</span>','  <span class="kw">return</span> <span class="kw">this</span>;','}']),tx:ln(['<span class="cmt">// Transaction: who sends how much to whom</span>','','<span class="kw">class</span> <span class="fn">Transaction</span> {','  <span class="fn">constructor</span>(sender, receiver, amount) {','    <span class="kw">this</span>.sender    = sender;     <span class="cmt">// public key</span>','    <span class="kw">this</span>.receiver  = receiver;   <span class="cmt">// public key</span>','    <span class="kw">this</span>.amount    = amount;','    <span class="kw">this</span>.signature = <span class="kw">null</span>;','  }','','  <span class="fn">signTransaction</span>(privateKey) {','    <span class="kw">this</span>.signature = <span class="fn">sign</span>(<span class="kw">this</span>.<span class="fn">computeHash</span>(), privateKey);','  }','','  <span class="fn">isValid</span>() {','    <span class="kw">if</span> (<span class="kw">this</span>.sender === <span class="str">\'MINING_REWARD\'</span>) <span class="kw">return true</span>;','    <span class="kw">return</span> <span class="fn">verify</span>(<span class="kw">this</span>.<span class="fn">computeHash</span>(), <span class="kw">this</span>.signature, <span class="kw">this</span>.sender);','  }','}']),wallet:ln(['<span class="cmt">// Wallet = key pair</span>','<span class="cmt">// Public key  = address  |  Private key = secret</span>','','<span class="kw">class</span> <span class="fn">Wallet</span> {','  <span class="kw">static</span> <span class="fn">create</span>() {','    <span class="kw">const</span> keys = <span class="fn">generateKeyPair</span>();','    <span class="kw">return new</span> <span class="fn">Wallet</span>(keys.publicKey, keys.privateKey);','  }','','  <span class="fn">createTransaction</span>(receiver, amount) {','    <span class="kw">const</span> tx = <span class="kw">new</span> <span class="fn">Transaction</span>(<span class="kw">this</span>.publicKey, receiver, amount);','    tx.<span class="fn">signTransaction</span>(<span class="kw">this</span>.privateKey);','    <span class="kw">return</span> tx;','  }','}']),chain:ln(['<span class="cmt">// Validate: check every block links correctly</span>','','<span class="fn">isValid</span>() {','  <span class="kw">for</span> (<span class="kw">let</span> i = <span class="num">1</span>; i < <span class="kw">this</span>.chain.length; i++) {','    <span class="kw">const</span> curr = <span class="kw">this</span>.chain[i];','    <span class="kw">const</span> prev = <span class="kw">this</span>.chain[i - <span class="num">1</span>];','','    <span class="cmt">// Recompute hash — was data tampered?</span>','    <span class="kw">if</span> (curr.hash !== curr.<span class="fn">computeHash</span>())','      <span class="kw">return false</span>;','','    <span class="cmt">// Correct parent?</span>','    <span class="kw">if</span> (curr.previousHash !== prev.hash)','      <span class="kw">return false</span>;','','    <span class="cmt">// Valid signatures?</span>','    <span class="kw">if</span> (!curr.<span class="fn">hasValidTransactions</span>())','      <span class="kw">return false</span>;','  }','  <span class="kw">return true</span>;','}'])};const body=document.getElementById('codeBody');body.innerHTML=`<pre>${s.block}</pre>`;document.querySelectorAll('.code-tab').forEach(tab=>{tab.addEventListener('click',()=>{document.querySelectorAll('.code-tab').forEach(t=>t.classList.remove('active'));tab.classList.add('active');body.innerHTML=`<pre>${s[tab.dataset.tab]}</pre>`})})})();

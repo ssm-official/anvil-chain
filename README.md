@@ -26,8 +26,16 @@ See the [Whitepaper](WHITEPAPER.md) for a detailed comparison of every component
 git clone https://github.com/ssm-official/anvil-chain.git
 cd anvil-chain
 npm install
-npm start
+npm link
 ```
+
+Then from anywhere, just run:
+
+```bash
+anvil-chain
+```
+
+That's it. To start it again later, just type `anvil-chain` in your terminal.
 
 ## CLI Commands
 

@@ -567,10 +567,18 @@ function prompt() {
 
 console.log('');
 console.log(`  ${c.dim}${'='.repeat(56)}${c.reset}`);
-console.log(`  ${c.bold}${c.purple} ANVIL${c.reset}  ${c.dim}${config.COIN_NAME} (${config.COIN_SYMBOL})${c.reset}`);
+console.log('');
+console.log(`  ${c.bold}${c.purple}   ___    _   ___    __ ___  _     ${c.reset}`);
+console.log(`  ${c.bold}${c.purple}  / _ |  / | / / |  / //  / / /    ${c.reset}`);
+console.log(`  ${c.bold}${c.purple} / __ | /  |/ /| | / // / / / /__  ${c.reset}`);
+console.log(`  ${c.bold}${c.purple}/_/ |_|/_/|__/ |_|/_//_/ /_/____/  ${c.reset}`);
+console.log(`  ${c.bold}${c.purple}              C H A I N            ${c.reset}`);
+console.log('');
 console.log(`  ${c.dim}${'='.repeat(56)}${c.reset}`);
 console.log(`  ${c.gray}A sandbox recreation of Bitcoin's core mechanics.${c.reset}`);
 console.log(`  ${c.gray}Not real cryptocurrency. Built for learning.${c.reset}`);
+console.log('');
+console.log(`  ${c.gray}To start this again, run: ${c.bold}${c.cyan}anvil-chain${c.reset}`);
 console.log('');
 console.log(`  ${c.gray}Type ${c.cyan}/help${c.gray} for commands.${c.reset}`);
 console.log(`  ${c.gray}Type ${c.cyan}/explain mine${c.gray} to learn how Bitcoin mining works.${c.reset}`);

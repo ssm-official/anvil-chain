@@ -4,7 +4,7 @@
   "description": "A beginner-friendly blockchain built from scratch for learning. Mine blocks, send coins, and understand how blockchains work.",
   "main": "src/cli/index.js",
   "bin": {
-    "anvil": "./src/cli/index.js"
+    "anvil-chain": "./src/cli/index.js"
   },
   "scripts": {
     "start": "node src/cli/index.js",

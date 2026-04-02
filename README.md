@@ -1,21 +1,24 @@
 # Anvil
 
-> **EDUCATIONAL SANDBOX** — This is not real cryptocurrency. Anvil is a learning tool for understanding how blockchains work. The ANV coin has zero monetary value.
+> **EDUCATIONAL SANDBOX** — This is not real cryptocurrency. Anvil is a learning tool based on Bitcoin's design. The ANV coin has zero monetary value.
 
-A beginner-friendly blockchain built from scratch in JavaScript. No frameworks, no magic — just blocks, hashes, and proof-of-work you can actually read.
+A simplified recreation of Bitcoin's core blockchain mechanics, built from scratch in JavaScript. Same algorithms, same concepts — just readable enough that a beginner can follow along.
 
-**Anvil is a sandbox.** It runs entirely on your local machine, connects to no real network, and involves no real money. It exists solely to teach how blockchain technology works at a fundamental level.
+**Anvil is a sandbox.** It runs entirely on your local machine, connects to no real network, and involves no real money. It exists to teach how Bitcoin actually works under the hood.
 
-## What's Inside
+## Based on Bitcoin
 
-- **Proof-of-work mining** with configurable difficulty
-- **Ed25519 digital signatures** for transaction authentication
-- **Native coin (ANV)** with mining rewards and balance tracking
-- **Double-spend prevention** — balances are checked before transactions are accepted
-- **Chain validation** — tamper with any block and the whole chain breaks
-- **Multi-node networking** — run multiple nodes, share blocks, reach consensus
-- **Interactive CLI** — create wallets, send coins, mine blocks, inspect the chain
-- **Single config file** — customize coin name, difficulty, reward, block size
+Anvil implements Bitcoin's fundamental algorithms:
+
+- **SHA-256 proof-of-work** mining (same hash algorithm as Bitcoin)
+- **Cryptographic transaction signing** (Ed25519 instead of Bitcoin's ECDSA, same principle)
+- **Hash-linked blocks** forming a tamper-evident chain
+- **Coinbase transactions** that create new coins as mining rewards (starts at 50, like Bitcoin did)
+- **Nakamoto consensus** — longest valid chain wins
+- **Double-spend prevention** via balance validation before accepting transactions
+- **Multi-node networking** with block broadcasting and chain synchronization
+
+See the [Whitepaper](WHITEPAPER.md) for a detailed comparison of every component to Bitcoin.
 
 ## Quick Start
 
@@ -26,138 +29,121 @@ npm install
 npm start
 ```
 
-That's it. You'll see the interactive CLI:
-
-```
-  ========================================
-   Welcome to Anvil (ANV)
-   A beginner-friendly blockchain
-  ========================================
-  Type "help" for available commands.
-
-  anvil (no wallet) >
-```
-
 ## CLI Commands
 
 | Command | Description |
 |---|---|
-| `create-wallet` | Generate a new Ed25519 key pair |
-| `load-wallet <file>` | Load a wallet from a JSON file |
-| `balance` | Check your current balance |
-| `send <address> <amount>` | Send coins to another address |
-| `mine` | Mine the next block and earn the block reward |
-| `pending` | View transactions waiting to be mined |
-| `chain` | Display the full blockchain |
-| `validate` | Verify the integrity of the chain |
-| `info` | Show chain statistics |
-| `exit` | Quit |
+| `/wallet create` | Generate a new wallet (key pair) |
+| `/wallet load <file>` | Load a wallet from a saved file |
+| `/wallet info` | Show wallet details |
+| `/balance` | Check your balance |
+| `/send <address> <amount>` | Send coins |
+| `/mine` | Mine the next block and earn the reward |
+| `/pending` | View transactions waiting in the mempool |
+| `/chain` | Display the full blockchain |
+| `/validate` | Verify chain integrity |
+| `/info` | Show chain statistics |
+| `/explain <topic>` | Learn how something works in Bitcoin |
+| `/explain list` | Show all explanation topics |
+| `/clear` | Clear terminal |
+| `/exit` | Quit |
+
+### The /explain System
+
+Type `/explain` followed by a topic to learn how it works in Bitcoin vs this sandbox:
+
+```
+/explain mine          How Bitcoin mining works (hardware, difficulty, rewards)
+/explain wallet        How Bitcoin wallets and keys work
+/explain transaction   How Bitcoin transactions work (UTXO vs account model)
+/explain block         How Bitcoin blocks are structured
+/explain chain         How the blockchain is tamper-evident
+/explain consensus     How Nakamoto consensus achieves agreement
+/explain difficulty    How Bitcoin adjusts mining difficulty
+/explain reward        How block rewards and halving work
+/explain hash          How SHA-256 hashing works
+/explain genesis       The story of Bitcoin's genesis block
+```
 
 ## Running a Network
 
-You can simulate a multi-node network on your machine:
+Simulate Bitcoin's peer-to-peer network with local nodes:
 
 ```bash
-# Terminal 1 — start the first node
+# Terminal 1 — first node
 npm run node
 
-# Terminal 2 — start a second node, connected to the first
+# Terminal 2 — second node, connected to first
 npm run node:3002
 
-# Terminal 3 — start a third node, connected to both
+# Terminal 3 — third node, connected to both
 npm run node:3003
 ```
 
-Nodes expose a REST API:
+When a block is mined on one node, it broadcasts to all peers. Peers adopt the longest valid chain.
 
-| Endpoint | Method | Description |
-|---|---|---|
-| `/chain` | GET | Get the full chain |
-| `/transactions` | POST | Submit a signed transaction |
-| `/mine` | POST | Mine a block (`{ minerAddress }`) |
-| `/balance/:address` | GET | Get balance for an address |
-| `/validate` | GET | Validate the chain |
-| `/peers` | GET/POST | View or add peers |
-| `/info` | GET | Node information |
+## Configuration
 
-When a block is mined on one node, it broadcasts the chain to all peers. Peers adopt the longest valid chain (Nakamoto consensus).
+Edit `config.js` — Bitcoin's actual values are noted for comparison:
 
-## Customization
-
-Edit `config.js` to change:
-
-```js
-COIN_NAME: 'Anvil',        // Your coin's name
-COIN_SYMBOL: 'ANV',        // Ticker symbol
-MINING_DIFFICULTY: 3,       // Leading zeros required (higher = harder)
-BLOCK_REWARD: 50,           // Coins per mined block
-MAX_TRANSACTIONS_PER_BLOCK: 10,
+```javascript
+COIN_NAME: 'Anvil',           // Bitcoin: "Bitcoin"
+COIN_SYMBOL: 'ANV',           // Bitcoin: "BTC"
+MINING_DIFFICULTY: 3,          // Bitcoin: ~80 trillion (adjusts every 2016 blocks)
+BLOCK_REWARD: 50,              // Bitcoin: started at 50, now 3.125 after 4 halvings
+MAX_TRANSACTIONS_PER_BLOCK: 10 // Bitcoin: ~2000-3000 per block (limited by weight)
 ```
 
 ## Project Structure
 
 ```
 anvil/
-├── config.js                  # All customizable settings
+├── config.js                  # All settings (with Bitcoin comparisons)
+├── WHITEPAPER.md              # Technical whitepaper
 ├── src/
 │   ├── blockchain/
-│   │   ├── block.js           # Block structure and mining
-│   │   ├── chain.js           # Blockchain logic, validation, balances
-│   │   ├── transaction.js     # Transaction creation and signing
-│   │   └── wallet.js          # Key pair generation and management
+│   │   ├── block.js           # Block structure and proof-of-work mining
+│   │   ├── chain.js           # Blockchain, validation, balances, consensus
+│   │   ├── transaction.js     # Signed transactions
+│   │   └── wallet.js          # Key pair generation
 │   ├── network/
-│   │   └── node.js            # Express HTTP node server
+│   │   └── node.js            # HTTP node server (simulates P2P)
 │   ├── cli/
-│   │   └── index.js           # Interactive command-line interface
+│   │   └── index.js           # Interactive CLI with /commands
 │   └── utils/
-│       └── crypto.js          # SHA-256 hashing, Ed25519 signatures
-├── landing/
-│   └── index.html             # Project landing page
+│       └── crypto.js          # SHA-256 + Ed25519 (Node.js built-in crypto)
+├── docs/                      # Landing page (GitHub Pages)
 ├── package.json
 ├── LICENSE
 └── README.md
 ```
 
-## How It Works
+## What Anvil Simplifies
 
-### 1. Blocks
-Each block contains an index, timestamp, list of transactions, the previous block's hash, a nonce, and its own hash. The hash is computed from all these fields — change anything and the hash changes.
+| Bitcoin Feature | Anvil Version | Why |
+|---|---|---|
+| ECDSA (secp256k1) | Ed25519 | Same concept, modern algorithm |
+| UTXO model | Account balances | Much simpler to understand |
+| Merkle trees | Flat transaction array | Removes a layer of complexity |
+| Script system (OP_CODES) | Fixed signature check | Script is a deep topic on its own |
+| Difficulty adjustment | Fixed difficulty | Algorithm is simple but adds code |
+| Block reward halving | Fixed reward | Easy to add as an exercise |
+| Transaction fees | None | Simplifies mining |
+| P2P gossip protocol | HTTP REST | Easy to inspect with curl |
+| ~600GB chain | In-memory only | Starts fresh each run |
 
-### 2. Chain
-Blocks link together by storing the hash of the previous block. This creates an immutable chain: tampering with block #5 would change its hash, which would break the link in block #6, and so on.
-
-### 3. Proof of Work
-To add a block, miners must find a nonce that makes the block's hash start with a certain number of zeros (the difficulty). This requires brute-force computation and is what makes the chain secure — rewriting history would require redoing all that work.
-
-### 4. Transactions
-Each transaction is signed with the sender's Ed25519 private key. The network verifies signatures before accepting transactions. This proves the sender authorized the transfer without revealing their private key.
-
-### 5. Consensus
-When multiple nodes exist, they follow the **longest valid chain rule**. If a node receives a chain that is longer than its own and passes validation, it adopts the new chain. This is how distributed nodes agree on the state of truth.
-
-## Security Limitations
-
-This is educational software. Known simplifications:
-
-- **No Merkle trees** — transactions are stored as a flat list, not a hash tree
-- **No UTXO model** — balances are calculated by scanning the entire chain
-- **No mempool prioritization** — transactions are processed first-come, first-served
-- **No transaction fees** — miners only earn the block reward
-- **No difficulty adjustment** — difficulty is fixed in config
-- **No account nonces** — replay protection relies on balance checks, not sequence numbers
-- **Plain-text key storage** — wallet files are not encrypted
-- **HTTP networking** — real blockchains use P2P protocols, not REST APIs
-- **No fork resolution** — only chain length is compared, not total work
+Read the [Whitepaper](WHITEPAPER.md) for the full technical breakdown.
 
 ## Disclaimer
 
-Anvil is an **educational sandbox**. The ANV coin has **no real-world monetary value**. This project is not a cryptocurrency, not a token, not a financial product, and not connected to any real blockchain network. It runs locally on your machine and exists only to help you learn. Do not use this code to secure anything of value.
+Anvil is an **educational sandbox**. The ANV coin has **no real-world monetary value**. This project is not a cryptocurrency, not a token, not a financial product, and not connected to any real blockchain network. It runs locally on your machine and exists only to help you learn how Bitcoin works. Do not use this code to secure anything of value.
 
 ## Links
 
 - [Live Site](https://ssm-official.github.io/anvil-chain/)
+- [Whitepaper](WHITEPAPER.md)
 - [Twitter / X](https://x.com/S_S_M_X)
 
 ## License
 
-MIT — use it however you want.
+MIT

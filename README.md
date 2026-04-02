@@ -1,8 +1,10 @@
 # Anvil
 
+> **EDUCATIONAL SANDBOX** — This is not real cryptocurrency. Anvil is a learning tool for understanding how blockchains work. The ANV coin has zero monetary value.
+
 A beginner-friendly blockchain built from scratch in JavaScript. No frameworks, no magic — just blocks, hashes, and proof-of-work you can actually read.
 
-**Anvil is educational software.** It demonstrates how blockchains work at a fundamental level. It is not intended for production use.
+**Anvil is a sandbox.** It runs entirely on your local machine, connects to no real network, and involves no real money. It exists solely to teach how blockchain technology works at a fundamental level.
 
 ## What's Inside
 
@@ -146,6 +148,15 @@ This is educational software. Known simplifications:
 - **Plain-text key storage** — wallet files are not encrypted
 - **HTTP networking** — real blockchains use P2P protocols, not REST APIs
 - **No fork resolution** — only chain length is compared, not total work
+
+## Disclaimer
+
+Anvil is an **educational sandbox**. The ANV coin has **no real-world monetary value**. This project is not a cryptocurrency, not a token, not a financial product, and not connected to any real blockchain network. It runs locally on your machine and exists only to help you learn. Do not use this code to secure anything of value.
+
+## Links
+
+- [Landing Page](https://ssm-official.github.io/anvil-chain/)
+- [Twitter / X](https://x.com/S_S_M_X)
 
 ## License
 

@@ -3,55 +3,80 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Anvil — A Blockchain You Can Understand</title>
+  <title>Anvil — Learn How Blockchains Work</title>
+  <meta name="description" content="Anvil is an open-source educational sandbox blockchain. Not real crypto — just a hands-on way to learn how blockchains actually work.">
   <style>
-    /* ── Reset & Base ──────────────────────────────────────────────── */
+    /* ── Reset ─────────────────────────────────────────────────────── */
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      --bg: #0a0a0f;
-      --surface: #12121a;
-      --border: #1e1e2e;
-      --text: #e2e2e8;
-      --muted: #8888a0;
-      --accent: #6c5ce7;
-      --accent-glow: #6c5ce740;
-      --green: #00b894;
-      --orange: #fdcb6e;
+      --bg: #06060b;
+      --surface: #0d0d14;
+      --surface2: #13131e;
+      --border: #1a1a2e;
+      --text: #e4e4ec;
+      --muted: #6e6e8a;
+      --accent: #7c6df0;
+      --accent2: #a78bfa;
+      --accent-glow: rgba(124,109,240,0.25);
+      --green: #34d399;
+      --orange: #fbbf24;
+      --red: #f87171;
+      --cyan: #22d3ee;
     }
 
     html { scroll-behavior: smooth; }
 
     body {
-      font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+      font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', 'Consolas', monospace;
       background: var(--bg);
       color: var(--text);
       line-height: 1.7;
       overflow-x: hidden;
     }
 
-    a { color: var(--accent); text-decoration: none; }
-    a:hover { text-decoration: underline; }
+    a { color: var(--accent2); text-decoration: none; transition: color 0.2s; }
+    a:hover { color: #fff; }
 
-    /* ── Animated Background ──────────────────────────────────────── */
-    .bg-grid {
+    /* ── Floating Particles Canvas ────────────────────────────────── */
+    #particles {
       position: fixed;
       inset: 0;
       z-index: 0;
-      background-image:
-        linear-gradient(var(--border) 1px, transparent 1px),
-        linear-gradient(90deg, var(--border) 1px, transparent 1px);
-      background-size: 60px 60px;
-      opacity: 0.3;
+      pointer-events: none;
     }
 
-    /* ── Layout ───────────────────────────────────────────────────── */
+    /* ── Scroll fade-in ───────────────────────────────────────────── */
+    .reveal {
+      opacity: 0;
+      transform: translateY(40px);
+      transition: opacity 0.7s ease, transform 0.7s ease;
+    }
+    .reveal.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* ── Container ────────────────────────────────────────────────── */
     .container {
-      max-width: 900px;
+      max-width: 1000px;
       margin: 0 auto;
       padding: 0 24px;
       position: relative;
       z-index: 1;
+    }
+
+    /* ── Sandbox Banner ───────────────────────────────────────────── */
+    .sandbox-banner {
+      background: linear-gradient(90deg, var(--accent) 0%, #a78bfa 100%);
+      color: #000;
+      text-align: center;
+      padding: 10px 16px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      position: relative;
+      z-index: 10;
     }
 
     /* ── Nav ──────────────────────────────────────────────────────── */
@@ -59,80 +84,137 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 24px 0;
+      padding: 20px 0;
+      position: sticky;
+      top: 0;
+      z-index: 9;
+      background: rgba(6,6,11,0.85);
+      backdrop-filter: blur(16px);
+      border-bottom: 1px solid transparent;
+      transition: border-color 0.3s;
     }
+    nav.scrolled { border-bottom-color: var(--border); }
 
     .logo {
-      font-size: 1.3rem;
-      font-weight: 700;
+      font-size: 1.25rem;
+      font-weight: 800;
       color: var(--text);
-      letter-spacing: 2px;
+      letter-spacing: 3px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .logo .anvil-icon {
+      width: 28px;
+      height: 28px;
+      background: var(--accent);
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.9rem;
+      color: #fff;
     }
 
-    .logo span { color: var(--accent); }
-
-    nav .links { display: flex; gap: 24px; }
-    nav .links a { color: var(--muted); font-size: 0.85rem; }
-    nav .links a:hover { color: var(--text); text-decoration: none; }
+    .nav-links { display: flex; gap: 24px; align-items: center; }
+    .nav-links a { color: var(--muted); font-size: 0.82rem; font-weight: 500; }
+    .nav-links a:hover { color: var(--text); }
+    .nav-links .nav-gh {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      padding: 8px 16px;
+      border-radius: 8px;
+      color: var(--text);
+      font-weight: 600;
+    }
+    .nav-links .nav-gh:hover {
+      border-color: var(--accent);
+      background: var(--accent);
+      color: #fff;
+    }
 
     /* ── Hero ─────────────────────────────────────────────────────── */
     .hero {
       text-align: center;
-      padding: 100px 0 80px;
+      padding: 100px 0 60px;
+      position: relative;
+    }
+
+    .hero-badge {
+      display: inline-block;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      padding: 6px 16px;
+      border-radius: 100px;
+      font-size: 0.75rem;
+      color: var(--orange);
+      font-weight: 600;
+      margin-bottom: 28px;
+      letter-spacing: 0.5px;
     }
 
     .hero h1 {
-      font-size: clamp(2.5rem, 6vw, 4rem);
-      font-weight: 800;
-      line-height: 1.1;
-      margin-bottom: 20px;
+      font-size: clamp(2.8rem, 7vw, 4.5rem);
+      font-weight: 900;
+      line-height: 1.05;
+      margin-bottom: 24px;
+      letter-spacing: -1px;
     }
 
-    .hero h1 .highlight {
-      background: linear-gradient(135deg, var(--accent), #a29bfe);
+    .hero h1 .grad {
+      background: linear-gradient(135deg, var(--accent), var(--accent2), var(--cyan));
+      background-size: 200% 200%;
+      animation: gradShift 4s ease infinite;
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       background-clip: text;
     }
 
+    @keyframes gradShift {
+      0%, 100% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+    }
+
     .hero p {
       color: var(--muted);
-      font-size: 1.05rem;
-      max-width: 560px;
+      font-size: 1rem;
+      max-width: 540px;
       margin: 0 auto 40px;
+      line-height: 1.8;
     }
 
     .hero-buttons {
       display: flex;
-      gap: 16px;
+      gap: 14px;
       justify-content: center;
       flex-wrap: wrap;
+      margin-bottom: 20px;
     }
 
     .btn {
       display: inline-flex;
       align-items: center;
-      gap: 8px;
-      padding: 14px 28px;
-      border-radius: 8px;
+      gap: 10px;
+      padding: 15px 30px;
+      border-radius: 10px;
       font-family: inherit;
-      font-size: 0.9rem;
-      font-weight: 600;
+      font-size: 0.88rem;
+      font-weight: 700;
       border: none;
       cursor: pointer;
-      transition: all 0.2s;
+      transition: all 0.25s;
+      text-decoration: none;
     }
 
     .btn-primary {
       background: var(--accent);
       color: #fff;
-      box-shadow: 0 0 30px var(--accent-glow);
+      box-shadow: 0 0 40px var(--accent-glow), 0 4px 20px rgba(0,0,0,0.3);
     }
-
     .btn-primary:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 0 50px var(--accent-glow);
-      text-decoration: none;
+      transform: translateY(-3px);
+      box-shadow: 0 0 60px var(--accent-glow), 0 8px 30px rgba(0,0,0,0.4);
+      color: #fff;
     }
 
     .btn-outline {
@@ -140,546 +222,1418 @@
       color: var(--text);
       border: 1px solid var(--border);
     }
-
     .btn-outline:hover {
       border-color: var(--accent);
-      transform: translateY(-2px);
-      text-decoration: none;
+      transform: translateY(-3px);
+      color: #fff;
     }
 
-    /* ── Terminal Demo ────────────────────────────────────────────── */
-    .terminal-section {
-      padding: 60px 0;
+    .btn svg { width: 18px; height: 18px; fill: currentColor; }
+
+    .hero-note {
+      color: var(--muted);
+      font-size: 0.75rem;
+      margin-top: 16px;
     }
+
+    /* ── Animated Hash Ticker ─────────────────────────────────────── */
+    .hash-ticker {
+      overflow: hidden;
+      padding: 20px 0;
+      margin: 40px 0;
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      position: relative;
+    }
+    .hash-ticker::before, .hash-ticker::after {
+      content: '';
+      position: absolute;
+      top: 0; bottom: 0;
+      width: 120px;
+      z-index: 2;
+      pointer-events: none;
+    }
+    .hash-ticker::before { left: 0; background: linear-gradient(90deg, var(--bg), transparent); }
+    .hash-ticker::after  { right: 0; background: linear-gradient(-90deg, var(--bg), transparent); }
+
+    .hash-track {
+      display: flex;
+      gap: 40px;
+      animation: scroll 25s linear infinite;
+      width: max-content;
+    }
+    @keyframes scroll {
+      0% { transform: translateX(0); }
+      100% { transform: translateX(-50%); }
+    }
+
+    .hash-item {
+      flex-shrink: 0;
+      font-size: 0.72rem;
+      color: var(--muted);
+      opacity: 0.5;
+      white-space: nowrap;
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* ── Interactive Mining Sim ────────────────────────────────────── */
+    .mining-sim {
+      padding: 80px 0;
+    }
+
+    .sim-wrapper {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      overflow: hidden;
+    }
+
+    .sim-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 20px 28px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .sim-header h3 { font-size: 1rem; }
+    .sim-header .sim-badge {
+      font-size: 0.7rem;
+      color: var(--green);
+      background: rgba(52,211,153,0.1);
+      padding: 4px 12px;
+      border-radius: 100px;
+      font-weight: 600;
+    }
+
+    .sim-body {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      min-height: 380px;
+    }
+
+    @media (max-width: 700px) {
+      .sim-body { grid-template-columns: 1fr; }
+    }
+
+    .sim-left {
+      padding: 28px;
+      border-right: 1px solid var(--border);
+    }
+
+    .sim-right {
+      padding: 28px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .sim-field {
+      margin-bottom: 16px;
+    }
+
+    .sim-field label {
+      display: block;
+      font-size: 0.72rem;
+      color: var(--muted);
+      margin-bottom: 6px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .sim-field input, .sim-field select {
+      width: 100%;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 10px 14px;
+      border-radius: 8px;
+      font-family: inherit;
+      font-size: 0.85rem;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .sim-field input:focus, .sim-field select:focus {
+      border-color: var(--accent);
+    }
+
+    #mineBtn {
+      margin-top: auto;
+      width: 100%;
+      padding: 14px;
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      font-family: inherit;
+      font-size: 0.9rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    #mineBtn:hover { box-shadow: 0 0 30px var(--accent-glow); transform: translateY(-2px); }
+    #mineBtn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
+
+    .sim-output {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .sim-log {
+      flex: 1;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px;
+      font-size: 0.78rem;
+      line-height: 1.8;
+      overflow-y: auto;
+      max-height: 260px;
+      margin-bottom: 16px;
+    }
+
+    .sim-log .log-line { margin-bottom: 2px; }
+    .sim-log .log-muted { color: var(--muted); }
+    .sim-log .log-green { color: var(--green); }
+    .sim-log .log-accent { color: var(--accent2); }
+    .sim-log .log-orange { color: var(--orange); }
+    .sim-log .log-hash {
+      color: var(--cyan);
+      word-break: break-all;
+    }
+
+    .sim-stats {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 10px;
+    }
+
+    .sim-stat {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px;
+      text-align: center;
+    }
+
+    .sim-stat .val {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--accent2);
+    }
+
+    .sim-stat .label {
+      font-size: 0.65rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-top: 2px;
+    }
+
+    /* ── Terminal ──────────────────────────────────────────────────── */
+    .terminal-section { padding: 60px 0; }
 
     .terminal {
       background: var(--surface);
       border: 1px solid var(--border);
-      border-radius: 12px;
+      border-radius: 14px;
       overflow: hidden;
-      box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+      box-shadow: 0 30px 80px rgba(0,0,0,0.5);
     }
 
     .terminal-bar {
       display: flex;
       align-items: center;
       gap: 8px;
-      padding: 14px 18px;
-      background: #0e0e16;
+      padding: 16px 20px;
+      background: #0a0a12;
       border-bottom: 1px solid var(--border);
     }
 
-    .terminal-dot {
-      width: 12px;
-      height: 12px;
-      border-radius: 50%;
-    }
-
+    .terminal-dot { width: 12px; height: 12px; border-radius: 50%; }
     .terminal-dot.red    { background: #ff5f57; }
     .terminal-dot.yellow { background: #febc2e; }
     .terminal-dot.green  { background: #28c840; }
-
-    .terminal-title {
-      margin-left: 12px;
-      color: var(--muted);
-      font-size: 0.8rem;
-    }
+    .terminal-title { margin-left: 12px; color: var(--muted); font-size: 0.78rem; }
 
     .terminal-body {
       padding: 24px;
-      font-size: 0.85rem;
+      font-size: 0.82rem;
       line-height: 1.9;
-      min-height: 300px;
+      min-height: 320px;
     }
 
     .terminal-body .prompt { color: var(--green); }
     .terminal-body .cmd    { color: var(--text); }
     .terminal-body .output { color: var(--muted); }
-    .terminal-body .accent { color: var(--accent); }
+    .terminal-body .accent { color: var(--accent2); }
     .terminal-body .warn   { color: var(--orange); }
 
     .typed-cursor {
       display: inline-block;
-      width: 8px;
-      height: 16px;
+      width: 9px;
+      height: 17px;
       background: var(--accent);
       animation: blink 1s step-end infinite;
       vertical-align: text-bottom;
       margin-left: 2px;
     }
+    @keyframes blink { 50% { opacity: 0; } }
 
-    @keyframes blink {
-      50% { opacity: 0; }
+    /* ── Code Viewer ──────────────────────────────────────────────── */
+    .code-section { padding: 80px 0; }
+
+    .code-viewer {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      overflow: hidden;
+    }
+
+    .code-tabs {
+      display: flex;
+      border-bottom: 1px solid var(--border);
+      overflow-x: auto;
+    }
+
+    .code-tab {
+      padding: 14px 22px;
+      font-size: 0.78rem;
+      color: var(--muted);
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      transition: all 0.2s;
+      white-space: nowrap;
+      background: none;
+      border-top: none;
+      border-left: none;
+      border-right: none;
+      font-family: inherit;
+    }
+    .code-tab:hover { color: var(--text); }
+    .code-tab.active {
+      color: var(--accent2);
+      border-bottom-color: var(--accent);
+      background: var(--surface2);
+    }
+
+    .code-body {
+      padding: 24px;
+      font-size: 0.78rem;
+      line-height: 1.8;
+      overflow-x: auto;
+      max-height: 420px;
+      overflow-y: auto;
+    }
+
+    .code-body pre { margin: 0; }
+
+    .code-body .kw  { color: var(--accent2); }
+    .code-body .fn  { color: #22d3ee; }
+    .code-body .str { color: var(--green); }
+    .code-body .cmt { color: var(--muted); font-style: italic; }
+    .code-body .num { color: var(--orange); }
+    .code-body .op  { color: var(--muted); }
+
+    .code-section-title {
+      text-align: center;
+      font-size: 1.8rem;
+      font-weight: 800;
+      margin-bottom: 12px;
+    }
+
+    .code-section-sub {
+      text-align: center;
+      color: var(--muted);
+      font-size: 0.88rem;
+      margin-bottom: 40px;
     }
 
     /* ── Features ─────────────────────────────────────────────────── */
-    .features {
-      padding: 80px 0;
-    }
-
-    .features h2 {
-      text-align: center;
-      font-size: 1.8rem;
-      margin-bottom: 48px;
-    }
+    .features { padding: 80px 0; }
+    .features h2 { text-align: center; font-size: 1.8rem; font-weight: 800; margin-bottom: 12px; }
+    .features .sub { text-align: center; color: var(--muted); font-size: 0.88rem; margin-bottom: 48px; }
 
     .feature-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-      gap: 20px;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+    }
+
+    @media (max-width: 700px) {
+      .feature-grid { grid-template-columns: 1fr; }
     }
 
     .feature-card {
       background: var(--surface);
       border: 1px solid var(--border);
-      border-radius: 12px;
+      border-radius: 14px;
       padding: 28px;
-      transition: border-color 0.2s;
+      transition: all 0.3s;
+      position: relative;
+      overflow: hidden;
     }
-
-    .feature-card:hover { border-color: var(--accent); }
+    .feature-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, var(--accent), transparent);
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+    .feature-card:hover { border-color: var(--accent); transform: translateY(-4px); }
+    .feature-card:hover::before { opacity: 1; }
 
     .feature-card .icon {
-      font-size: 1.8rem;
-      margin-bottom: 12px;
+      width: 44px;
+      height: 44px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.3rem;
+      margin-bottom: 16px;
     }
 
-    .feature-card h3 {
-      font-size: 1rem;
-      margin-bottom: 8px;
-    }
+    .feature-card h3 { font-size: 0.92rem; margin-bottom: 8px; }
+    .feature-card p { color: var(--muted); font-size: 0.78rem; line-height: 1.7; }
 
-    .feature-card p {
-      color: var(--muted);
-      font-size: 0.82rem;
-    }
+    /* ── How It Works (animated chain) ────────────────────────────── */
+    .how-section { padding: 80px 0; }
+    .how-section h2 { text-align: center; font-size: 1.8rem; font-weight: 800; margin-bottom: 12px; }
+    .how-section .sub { text-align: center; color: var(--muted); font-size: 0.88rem; margin-bottom: 48px; }
 
-    /* ── How It Works ─────────────────────────────────────────────── */
-    .how-it-works {
-      padding: 80px 0;
-    }
-
-    .how-it-works h2 {
-      text-align: center;
-      font-size: 1.8rem;
-      margin-bottom: 48px;
-    }
-
-    .steps {
+    .chain-flow {
       display: flex;
       flex-direction: column;
-      gap: 24px;
+      gap: 0;
+      position: relative;
     }
 
-    .step {
+    .chain-flow::before {
+      content: '';
+      position: absolute;
+      left: 30px;
+      top: 0;
+      bottom: 0;
+      width: 2px;
+      background: linear-gradient(180deg, var(--accent), var(--cyan), var(--green));
+    }
+
+    .flow-step {
       display: flex;
-      gap: 20px;
-      align-items: flex-start;
+      gap: 24px;
+      padding: 28px 0;
+      position: relative;
+    }
+
+    .flow-dot {
+      flex-shrink: 0;
+      width: 20px;
+      height: 20px;
+      background: var(--accent);
+      border-radius: 50%;
+      margin-top: 4px;
+      position: relative;
+      left: 21px;
+      box-shadow: 0 0 20px var(--accent-glow);
+      z-index: 1;
+    }
+
+    .flow-step:nth-child(3) .flow-dot { background: var(--cyan); box-shadow: 0 0 20px rgba(34,211,238,0.3); }
+    .flow-step:nth-child(4) .flow-dot { background: var(--green); box-shadow: 0 0 20px rgba(52,211,153,0.3); }
+    .flow-step:nth-child(5) .flow-dot { background: var(--orange); box-shadow: 0 0 20px rgba(251,191,36,0.3); }
+
+    .flow-content {
       background: var(--surface);
       border: 1px solid var(--border);
       border-radius: 12px;
       padding: 24px;
+      flex: 1;
+      margin-left: 16px;
     }
 
-    .step-num {
-      flex-shrink: 0;
-      width: 40px;
-      height: 40px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      border-radius: 8px;
-      background: var(--accent);
-      color: #fff;
-      font-weight: 700;
-      font-size: 1rem;
+    .flow-content h3 { font-size: 0.95rem; margin-bottom: 6px; }
+    .flow-content p { color: var(--muted); font-size: 0.8rem; }
+
+    .flow-content code {
+      display: inline-block;
+      background: var(--bg);
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      color: var(--cyan);
+      margin-top: 8px;
     }
 
-    .step h3 { font-size: 0.95rem; margin-bottom: 6px; }
-    .step p  { color: var(--muted); font-size: 0.82rem; }
-
-    /* ── Block Visualizer ─────────────────────────────────────────── */
-    .visualizer {
-      padding: 60px 0;
-    }
-
-    .visualizer h2 {
-      text-align: center;
-      font-size: 1.8rem;
-      margin-bottom: 48px;
-    }
+    /* ── Live Block Vis ───────────────────────────────────────────── */
+    .vis-section { padding: 60px 0; }
+    .vis-section h2 { text-align: center; font-size: 1.8rem; font-weight: 800; margin-bottom: 12px; }
+    .vis-section .sub { text-align: center; color: var(--muted); font-size: 0.88rem; margin-bottom: 40px; }
 
     .chain-vis {
       display: flex;
       gap: 0;
       overflow-x: auto;
-      padding: 20px 0;
+      padding: 20px 10px;
       justify-content: center;
-      flex-wrap: wrap;
     }
 
     .block-vis {
       flex-shrink: 0;
-      width: 200px;
+      width: 190px;
       background: var(--surface);
       border: 1px solid var(--border);
-      border-radius: 10px;
+      border-radius: 12px;
       padding: 18px;
-      font-size: 0.72rem;
+      font-size: 0.7rem;
+      transition: all 0.3s;
       position: relative;
-      transition: border-color 0.3s, box-shadow 0.3s;
+    }
+
+    .block-vis.mining {
+      border-color: var(--orange);
+      animation: miningPulse 0.8s ease infinite;
+    }
+
+    @keyframes miningPulse {
+      0%, 100% { box-shadow: 0 0 10px rgba(251,191,36,0.2); }
+      50% { box-shadow: 0 0 30px rgba(251,191,36,0.4); }
+    }
+
+    .block-vis.mined {
+      border-color: var(--green);
+      box-shadow: 0 0 20px rgba(52,211,153,0.2);
     }
 
     .block-vis:hover {
       border-color: var(--accent);
-      box-shadow: 0 0 20px var(--accent-glow);
+      box-shadow: 0 0 25px var(--accent-glow);
+      transform: translateY(-4px);
     }
 
-    .block-vis .block-idx {
-      font-weight: 700;
-      color: var(--accent);
-      font-size: 0.85rem;
-      margin-bottom: 10px;
-    }
-
-    .block-vis .field {
-      margin-bottom: 4px;
-      color: var(--muted);
-    }
-
-    .block-vis .field span {
-      color: var(--text);
-    }
+    .block-vis .block-idx { font-weight: 800; color: var(--accent2); font-size: 0.85rem; margin-bottom: 12px; }
+    .block-vis .field { margin-bottom: 4px; color: var(--muted); }
+    .block-vis .field span { color: var(--text); }
 
     .chain-arrow {
       display: flex;
       align-items: center;
       color: var(--accent);
-      font-size: 1.5rem;
-      padding: 0 8px;
+      font-size: 1.2rem;
+      padding: 0 6px;
       flex-shrink: 0;
+      opacity: 0.5;
     }
+
+    #addBlockBtn {
+      display: block;
+      margin: 24px auto 0;
+      padding: 12px 28px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--text);
+      border-radius: 10px;
+      font-family: inherit;
+      font-size: 0.82rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    #addBlockBtn:hover { border-color: var(--accent); background: var(--accent); color: #fff; }
 
     /* ── CTA ──────────────────────────────────────────────────────── */
-    .cta {
-      text-align: center;
-      padding: 80px 0 120px;
-    }
-
-    .cta h2 {
-      font-size: 1.8rem;
-      margin-bottom: 16px;
-    }
-
-    .cta p {
-      color: var(--muted);
-      margin-bottom: 32px;
-      font-size: 0.95rem;
-    }
+    .cta { text-align: center; padding: 80px 0; }
+    .cta h2 { font-size: 2rem; font-weight: 800; margin-bottom: 16px; }
+    .cta p { color: var(--muted); margin-bottom: 32px; font-size: 0.92rem; max-width: 500px; margin-left: auto; margin-right: auto; }
 
     .cta code {
-      display: inline-block;
+      display: block;
       background: var(--surface);
       border: 1px solid var(--border);
-      padding: 12px 24px;
-      border-radius: 8px;
-      font-size: 0.9rem;
-      margin-top: 20px;
+      padding: 16px 24px;
+      border-radius: 10px;
+      font-size: 0.82rem;
+      margin-top: 24px;
       color: var(--green);
+      max-width: 650px;
+      margin-left: auto;
+      margin-right: auto;
+      text-align: left;
+      overflow-x: auto;
+    }
+
+    /* ── Disclaimer Box ───────────────────────────────────────────── */
+    .disclaimer-box {
+      background: var(--surface);
+      border: 1px solid var(--orange);
+      border-radius: 14px;
+      padding: 28px;
+      margin: 60px 0;
+      text-align: center;
+    }
+
+    .disclaimer-box h3 {
+      color: var(--orange);
+      font-size: 1rem;
+      margin-bottom: 10px;
+    }
+
+    .disclaimer-box p {
+      color: var(--muted);
+      font-size: 0.82rem;
+      max-width: 600px;
+      margin: 0 auto;
+      line-height: 1.7;
+    }
+
+    /* ── TOS ──────────────────────────────────────────────────────── */
+    .tos { padding: 60px 0; }
+    .tos h2 { font-size: 1.4rem; font-weight: 800; margin-bottom: 24px; }
+
+    .tos-content {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 32px;
+    }
+
+    .tos-content h4 {
+      font-size: 0.88rem;
+      margin-bottom: 8px;
+      margin-top: 20px;
+      color: var(--text);
+    }
+
+    .tos-content h4:first-child { margin-top: 0; }
+
+    .tos-content p, .tos-content li {
+      color: var(--muted);
+      font-size: 0.78rem;
+      line-height: 1.8;
+    }
+
+    .tos-content ul {
+      padding-left: 20px;
+      margin: 8px 0;
     }
 
     /* ── Footer ───────────────────────────────────────────────────── */
     footer {
       border-top: 1px solid var(--border);
-      padding: 32px 0;
+      padding: 40px 0;
       text-align: center;
+    }
+
+    .footer-links {
+      display: flex;
+      justify-content: center;
+      gap: 28px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+
+    .footer-links a {
       color: var(--muted);
       font-size: 0.8rem;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .footer-links a:hover { color: var(--text); }
+    .footer-links a svg { width: 16px; height: 16px; fill: currentColor; }
+
+    .footer-copy {
+      color: var(--muted);
+      font-size: 0.72rem;
+      opacity: 0.6;
     }
 
     /* ── Responsive ───────────────────────────────────────────────── */
     @media (max-width: 600px) {
       .hero { padding: 60px 0 40px; }
+      .nav-links a:not(.nav-gh) { display: none; }
+      .sim-body { grid-template-columns: 1fr; }
+      .sim-left { border-right: none; border-bottom: 1px solid var(--border); }
+      .sim-stats { grid-template-columns: 1fr; }
       .chain-vis { justify-content: flex-start; }
-      .chain-arrow { transform: rotate(90deg); padding: 8px 0; }
+      .feature-grid { grid-template-columns: 1fr; }
+      .chain-flow::before { left: 20px; }
+      .flow-dot { left: 11px; }
     }
   </style>
 </head>
 <body>
-  <div class="bg-grid"></div>
+  <!-- Particles -->
+  <canvas id="particles"></canvas>
+
+  <!-- Sandbox Banner -->
+  <div class="sandbox-banner">
+    EDUCATIONAL SANDBOX — This is not real cryptocurrency. Anvil is a learning tool for understanding how blockchains work.
+  </div>
 
   <div class="container">
     <!-- Nav -->
-    <nav>
-      <div class="logo"><span>&gt;</span> ANVIL</div>
-      <div class="links">
+    <nav id="nav">
+      <div class="logo">
+        <div class="anvil-icon">&gt;</div>
+        ANVIL
+      </div>
+      <div class="nav-links">
         <a href="#features">Features</a>
         <a href="#how-it-works">How It Works</a>
-        <a href="#visualizer">Visualizer</a>
-        <a href="https://github.com/ssm-official/anvil-chain" target="_blank">GitHub</a>
+        <a href="#try-mining">Try Mining</a>
+        <a href="#tos">Terms</a>
+        <a href="https://github.com/ssm-official/anvil-chain" target="_blank" class="nav-gh">
+          <svg viewBox="0 0 16 16" width="16" height="16" fill="currentColor" style="vertical-align:text-bottom;margin-right:4px"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"></path></svg>
+          GitHub
+        </a>
       </div>
     </nav>
 
     <!-- Hero -->
     <section class="hero">
-      <h1>Build a blockchain<br><span class="highlight">from scratch.</span></h1>
+      <div class="hero-badge">OPEN-SOURCE LEARNING SANDBOX</div>
+      <h1>Understand blockchains<br><span class="grad">by building one.</span></h1>
       <p>
-        Anvil is an open-source, beginner-friendly blockchain written in plain JavaScript.
-        No frameworks. No magic. Just blocks, hashes, and proof-of-work you can actually read.
+        Anvil is an open-source blockchain written in plain JavaScript.
+        No real money. No tokens. Just a sandbox to learn how mining,
+        hashing, and consensus actually work under the hood.
       </p>
       <div class="hero-buttons">
         <a href="https://github.com/ssm-official/anvil-chain" class="btn btn-primary" target="_blank">
+          <svg viewBox="0 0 16 16" width="18" height="18" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"></path></svg>
           View on GitHub
         </a>
-        <a href="#how-it-works" class="btn btn-outline">
-          How It Works
+        <a href="https://x.com/S_S_M_X" class="btn btn-outline" target="_blank">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+          Follow on X
         </a>
       </div>
+      <p class="hero-note">100% local. Zero dependencies beyond Express. No real cryptocurrency involved.</p>
     </section>
 
+    <!-- Hash Ticker -->
+    <div class="hash-ticker">
+      <div class="hash-track" id="hashTrack"></div>
+    </div>
+
     <!-- Terminal Demo -->
-    <section class="terminal-section">
+    <section class="terminal-section reveal">
       <div class="terminal">
         <div class="terminal-bar">
           <div class="terminal-dot red"></div>
           <div class="terminal-dot yellow"></div>
           <div class="terminal-dot green"></div>
-          <span class="terminal-title">anvil — node v20</span>
+          <span class="terminal-title">anvil-chain &mdash; interactive CLI</span>
         </div>
-        <div class="terminal-body" id="terminal">
-        </div>
+        <div class="terminal-body" id="terminal"></div>
       </div>
     </section>
 
     <!-- Features -->
-    <section class="features" id="features">
+    <section class="features reveal" id="features">
       <h2>What's Inside</h2>
+      <p class="sub">Everything you need to understand blockchain fundamentals. Nothing you don't.</p>
       <div class="feature-grid">
         <div class="feature-card">
           <div class="icon">&#x26cf;</div>
           <h3>Proof-of-Work Mining</h3>
-          <p>Mine blocks with configurable difficulty. Watch the nonce increment until a valid hash is found.</p>
+          <p>Increment a nonce until the hash has enough leading zeros. Configurable difficulty so you can watch it happen in real time.</p>
         </div>
         <div class="feature-card">
           <div class="icon">&#x1f511;</div>
-          <h3>Digital Signatures</h3>
-          <p>Ed25519 key pairs sign every transaction. Cryptographic proof that you authorized the transfer.</p>
+          <h3>Ed25519 Signatures</h3>
+          <p>Every transaction is signed with a real Ed25519 private key and verified with the public key. Actual cryptography, not a placeholder.</p>
         </div>
         <div class="feature-card">
           <div class="icon">&#x1f4b0;</div>
-          <h3>Native Coin</h3>
-          <p>Miners earn block rewards. Send coins between wallets. Track balances across the chain.</p>
+          <h3>Native Coin (ANV)</h3>
+          <p>Miners earn block rewards. Send coins between wallets. Track balances. All in a sandbox with zero real-world value.</p>
         </div>
         <div class="feature-card">
           <div class="icon">&#x1f517;</div>
-          <h3>Chain Validation</h3>
-          <p>Every block links to the last. Tamper with one and the entire chain breaks — by design.</p>
+          <h3>Tamper-Proof Chain</h3>
+          <p>Each block stores the hash of the previous one. Change a single byte and the chain breaks — visibly and verifiably.</p>
         </div>
         <div class="feature-card">
           <div class="icon">&#x1f310;</div>
           <h3>Multi-Node Network</h3>
-          <p>Run multiple nodes locally. They share blocks, validate chains, and reach consensus.</p>
+          <p>Run 2, 3, or more nodes on localhost. They broadcast blocks, validate chains, and reach consensus automatically.</p>
         </div>
         <div class="feature-card">
           <div class="icon">&#x2699;</div>
-          <h3>Fully Customizable</h3>
-          <p>Change the coin name, mining difficulty, block reward, and block size from a single config file.</p>
+          <h3>One Config File</h3>
+          <p>Change the coin name, ticker, difficulty, block reward, and block size from a single file. Fork it and make it yours.</p>
         </div>
       </div>
     </section>
 
     <!-- How It Works -->
-    <section class="how-it-works" id="how-it-works">
+    <section class="how-section reveal" id="how-it-works">
       <h2>How It Works</h2>
-      <div class="steps">
-        <div class="step">
-          <div class="step-num">1</div>
-          <div>
-            <h3>Create a Wallet</h3>
-            <p>Generate an Ed25519 key pair. Your public key is your address. Your private key signs transactions.</p>
+      <p class="sub">Five steps from nothing to a working blockchain.</p>
+      <div class="chain-flow">
+        <div class="flow-step reveal">
+          <div class="flow-dot"></div>
+          <div class="flow-content">
+            <h3>1. Create a Wallet</h3>
+            <p>Generate an Ed25519 key pair. Your public key becomes your address. Your private key stays secret and signs transactions.</p>
+            <code>anvil > create-wallet</code>
           </div>
         </div>
-        <div class="step">
-          <div class="step-num">2</div>
-          <div>
-            <h3>Send a Transaction</h3>
-            <p>Sign a transfer with your private key. It enters the pending pool, waiting to be included in a block.</p>
+        <div class="flow-step reveal">
+          <div class="flow-dot"></div>
+          <div class="flow-content">
+            <h3>2. Mine Your First Block</h3>
+            <p>The miner picks up pending transactions, adds a coinbase reward, and brute-forces a nonce until the hash meets the difficulty target.</p>
+            <code>anvil > mine</code>
           </div>
         </div>
-        <div class="step">
-          <div class="step-num">3</div>
-          <div>
-            <h3>Mine a Block</h3>
-            <p>Pick up pending transactions, add a coinbase reward, and find a nonce that produces a hash with enough leading zeros.</p>
+        <div class="flow-step reveal">
+          <div class="flow-dot"></div>
+          <div class="flow-content">
+            <h3>3. Send Coins</h3>
+            <p>Create a transaction, sign it with your private key, and submit it to the pending pool. The chain checks your balance to prevent double-spending.</p>
+            <code>anvil > send &lt;address&gt; 25</code>
           </div>
         </div>
-        <div class="step">
-          <div class="step-num">4</div>
-          <div>
-            <h3>Chain Grows</h3>
-            <p>The new block links to the previous one via its hash. Any tampering would invalidate every block that follows.</p>
+        <div class="flow-step reveal">
+          <div class="flow-dot"></div>
+          <div class="flow-content">
+            <h3>4. Chain Grows</h3>
+            <p>Each new block links to the previous one via its hash. A tampered block would change every hash after it — the chain becomes self-evident.</p>
+            <code>anvil > chain</code>
           </div>
         </div>
-        <div class="step">
-          <div class="step-num">5</div>
-          <div>
-            <h3>Network Consensus</h3>
-            <p>Nodes share their chains. The longest valid chain wins — this is how the network agrees on truth.</p>
+        <div class="flow-step reveal">
+          <div class="flow-dot"></div>
+          <div class="flow-content">
+            <h3>5. Network Consensus</h3>
+            <p>Multiple nodes share their chains over HTTP. The longest valid chain wins. This is the same principle Bitcoin uses — Nakamoto consensus.</p>
+            <code>PORT=3002 PEERS=http://localhost:3001 npm run node</code>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Code Explorer -->
+    <section class="code-section reveal">
+      <h2 class="code-section-title">Read the Source</h2>
+      <p class="code-section-sub">Every line is commented. Here's a taste.</p>
+      <div class="code-viewer">
+        <div class="code-tabs">
+          <button class="code-tab active" data-tab="block">block.js</button>
+          <button class="code-tab" data-tab="mining">mining</button>
+          <button class="code-tab" data-tab="transaction">transaction.js</button>
+          <button class="code-tab" data-tab="wallet">wallet.js</button>
+        </div>
+        <div class="code-body" id="codeBody">
+          <!-- Filled by JS -->
+        </div>
+      </div>
+    </section>
+
+    <!-- Interactive Mining Simulator -->
+    <section class="mining-sim reveal" id="try-mining">
+      <div class="sim-wrapper">
+        <div class="sim-header">
+          <h3>Interactive Mining Simulator</h3>
+          <span class="sim-badge">SANDBOX</span>
+        </div>
+        <div class="sim-body">
+          <div class="sim-left">
+            <div class="sim-field">
+              <label>Block Data</label>
+              <input type="text" id="simData" value="Hello, Anvil!" placeholder="Type anything...">
+            </div>
+            <div class="sim-field">
+              <label>Difficulty (leading zeros)</label>
+              <select id="simDiff">
+                <option value="1">1 — Instant</option>
+                <option value="2" selected>2 — Fast</option>
+                <option value="3">3 — Medium</option>
+                <option value="4">4 — Slow (be patient!)</option>
+              </select>
+            </div>
+            <div class="sim-field">
+              <label>Previous Hash</label>
+              <input type="text" id="simPrev" value="000000000000000000" readonly style="opacity:0.5">
+            </div>
+            <button id="mineBtn">Mine Block</button>
+          </div>
+          <div class="sim-right">
+            <div class="sim-output">
+              <div class="sim-log" id="simLog">
+                <div class="log-line log-muted">Press "Mine Block" to start proof-of-work...</div>
+              </div>
+              <div class="sim-stats">
+                <div class="sim-stat">
+                  <div class="val" id="statNonce">0</div>
+                  <div class="label">Nonce</div>
+                </div>
+                <div class="sim-stat">
+                  <div class="val" id="statTime">0.00s</div>
+                  <div class="label">Time</div>
+                </div>
+                <div class="sim-stat">
+                  <div class="val" id="statHash">---</div>
+                  <div class="label">Hash Prefix</div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
     </section>
 
     <!-- Block Visualizer -->
-    <section class="visualizer" id="visualizer">
+    <section class="vis-section reveal" id="visualizer">
       <h2>Live Chain Visualizer</h2>
-      <div class="chain-vis" id="chainVis">
-        <!-- Blocks are generated by JS below -->
-      </div>
-      <p style="text-align:center;color:var(--muted);margin-top:20px;font-size:0.82rem;">
-        Blocks are simulated for demonstration. Run the real chain to see your own!
-      </p>
+      <p class="sub">Watch blocks link together. Click "Add Block" to grow the chain.</p>
+      <div class="chain-vis" id="chainVis"></div>
+      <button id="addBlockBtn">+ Mine New Block</button>
     </section>
 
+    <!-- Disclaimer -->
+    <div class="disclaimer-box reveal">
+      <h3>Important Disclaimer</h3>
+      <p>
+        Anvil is an <strong>educational sandbox</strong>. The ANV coin has <strong>no monetary value</strong>
+        whatsoever. This project exists solely to teach how blockchain technology works at a
+        fundamental level. It is not a cryptocurrency, not an investment, and not connected to any
+        real blockchain network. Do not use this in production.
+      </p>
+    </div>
+
     <!-- CTA -->
-    <section class="cta">
+    <section class="cta reveal">
       <h2>Start Building</h2>
-      <p>Clone the repo, install one dependency, and you have a working blockchain.</p>
+      <p>Clone the repo, install one dependency, and you have a working blockchain sandbox on your machine.</p>
       <div class="hero-buttons">
         <a href="https://github.com/ssm-official/anvil-chain" class="btn btn-primary" target="_blank">
+          <svg viewBox="0 0 16 16" width="18" height="18" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"></path></svg>
           View on GitHub
+        </a>
+        <a href="https://x.com/S_S_M_X" class="btn btn-outline" target="_blank">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+          Follow on X
         </a>
       </div>
       <code>git clone https://github.com/ssm-official/anvil-chain.git && cd anvil-chain && npm install && npm start</code>
     </section>
 
+    <!-- Terms of Service -->
+    <section class="tos reveal" id="tos">
+      <h2>Terms of Service</h2>
+      <div class="tos-content">
+        <h4>1. Nature of the Project</h4>
+        <p>Anvil ("the Software") is an open-source educational tool designed to demonstrate how blockchain technology works. It is a sandbox environment that runs entirely on your local machine. The native coin "ANV" has absolutely no real-world monetary value.</p>
+
+        <h4>2. No Financial Product</h4>
+        <p>Anvil is not a cryptocurrency, token, digital asset, security, or financial instrument of any kind. It does not connect to any public blockchain network, exchange, or financial system. Nothing in this project constitutes financial advice or an invitation to invest.</p>
+
+        <h4>3. Educational Use Only</h4>
+        <p>This software is intended exclusively for educational and research purposes. You may use it to:</p>
+        <ul>
+          <li>Learn how proof-of-work, hashing, and digital signatures function</li>
+          <li>Experiment with blockchain data structures</li>
+          <li>Build upon the code for your own learning projects</li>
+        </ul>
+
+        <h4>4. No Warranty</h4>
+        <p>The software is provided "as is" without warranty of any kind, express or implied. The authors and contributors are not liable for any claim, damage, or other liability arising from the use of this software.</p>
+
+        <h4>5. Security Disclaimer</h4>
+        <p>While Anvil uses real cryptographic primitives (SHA-256, Ed25519), the system architecture is simplified for educational clarity. It lacks many features required for a production blockchain (Merkle trees, UTXO model, difficulty adjustment, encrypted key storage, P2P networking). Do not use this code to secure anything of value.</p>
+
+        <h4>6. Open Source License</h4>
+        <p>Anvil is released under the MIT License. You are free to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the software, subject to the conditions of the MIT License included in the repository.</p>
+
+        <h4>7. Privacy</h4>
+        <p>Anvil does not collect, transmit, or store any personal data. Everything runs locally on your machine. Wallet keys are stored as local files and never leave your system.</p>
+      </div>
+    </section>
+
     <!-- Footer -->
     <footer>
-      <p>Anvil is open-source under the MIT License. Built for learning, not production.</p>
+      <div class="footer-links">
+        <a href="https://github.com/ssm-official/anvil-chain" target="_blank">
+          <svg viewBox="0 0 16 16"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+          GitHub
+        </a>
+        <a href="https://x.com/S_S_M_X" target="_blank">
+          <svg viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+          @S_S_M_X
+        </a>
+        <a href="#tos">Terms of Service</a>
+      </div>
+      <p class="footer-copy">Anvil is open-source under the MIT License. Built for learning, not production. No real cryptocurrency involved.</p>
     </footer>
   </div>
 
-  <!-- ── Scripts ──────────────────────────────────────────────────── -->
+  <!-- ══════════════════════════════════════════════════════════════ -->
+  <!-- SCRIPTS                                                       -->
+  <!-- ══════════════════════════════════════════════════════════════ -->
   <script>
+    // ================================================================
+    // Floating Particles (blockchain nodes visualization)
+    // ================================================================
+    (function() {
+      const canvas = document.getElementById('particles');
+      const ctx = canvas.getContext('2d');
+      let w, h, particles = [], connections = [];
+
+      function resize() {
+        w = canvas.width = window.innerWidth;
+        h = canvas.height = window.innerHeight;
+      }
+      window.addEventListener('resize', resize);
+      resize();
+
+      // Create particles
+      for (let i = 0; i < 50; i++) {
+        particles.push({
+          x: Math.random() * w,
+          y: Math.random() * h,
+          vx: (Math.random() - 0.5) * 0.4,
+          vy: (Math.random() - 0.5) * 0.4,
+          r: Math.random() * 2 + 1,
+        });
+      }
+
+      function draw() {
+        ctx.clearRect(0, 0, w, h);
+
+        // Draw connections between nearby particles
+        for (let i = 0; i < particles.length; i++) {
+          for (let j = i + 1; j < particles.length; j++) {
+            const dx = particles[i].x - particles[j].x;
+            const dy = particles[i].y - particles[j].y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            if (dist < 160) {
+              ctx.beginPath();
+              ctx.moveTo(particles[i].x, particles[j].y);
+              ctx.lineTo(particles[j].x, particles[j].y);
+              ctx.strokeStyle = `rgba(124, 109, 240, ${0.08 * (1 - dist / 160)})`;
+              ctx.lineWidth = 1;
+              ctx.stroke();
+            }
+          }
+        }
+
+        // Draw & move particles
+        for (const p of particles) {
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+          ctx.fillStyle = 'rgba(124, 109, 240, 0.3)';
+          ctx.fill();
+
+          p.x += p.vx;
+          p.y += p.vy;
+
+          if (p.x < 0 || p.x > w) p.vx *= -1;
+          if (p.y < 0 || p.y > h) p.vy *= -1;
+        }
+
+        requestAnimationFrame(draw);
+      }
+      draw();
+    })();
+
+    // ================================================================
+    // Scroll reveal
+    // ================================================================
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(e => {
+        if (e.isIntersecting) e.target.classList.add('visible');
+      });
+    }, { threshold: 0.1 });
+
+    document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+    // ================================================================
+    // Nav scroll effect
+    // ================================================================
+    window.addEventListener('scroll', () => {
+      document.getElementById('nav').classList.toggle('scrolled', window.scrollY > 40);
+    });
+
+    // ================================================================
+    // Hash Ticker — scrolling stream of hashes
+    // ================================================================
+    (function() {
+      const track = document.getElementById('hashTrack');
+      const chars = '0123456789abcdef';
+
+      function randHash() {
+        let h = '';
+        for (let i = 0; i < 64; i++) h += chars[Math.floor(Math.random() * 16)];
+        return h;
+      }
+
+      let html = '';
+      for (let i = 0; i < 30; i++) {
+        html += `<span class="hash-item">SHA256: ${randHash()}</span>`;
+      }
+      // Duplicate for seamless loop
+      track.innerHTML = html + html;
+    })();
+
     // ================================================================
     // Terminal typing animation
     // ================================================================
-    const lines = [
-      { type: 'prompt', text: 'anvil (no wallet) > ' },
-      { type: 'cmd',    text: 'create-wallet' },
-      { type: 'output', text: '' },
-      { type: 'output', text: '  New Wallet Created' },
-      { type: 'accent', text: '  Address: 302a300506032b6570...' },
-      { type: 'output', text: '' },
-      { type: 'prompt', text: 'anvil (302a300506032b65...) > ' },
-      { type: 'cmd',    text: 'mine' },
-      { type: 'output', text: '' },
-      { type: 'output', text: '  Mining block #1...' },
-      { type: 'warn',   text: '  Block mined! Nonce: 1847 | Time: 0.42s' },
-      { type: 'accent', text: '  Hash: 000a7f3c9b2e1d4f8a6c...' },
-      { type: 'output', text: '  You earned 50 ANV for mining this block!' },
-      { type: 'output', text: '' },
-      { type: 'prompt', text: 'anvil (302a300506032b65...) > ' },
-      { type: 'cmd',    text: 'balance' },
-      { type: 'output', text: '' },
-      { type: 'accent', text: '  Balance: 50 ANV' },
-      { type: 'output', text: '' },
-      { type: 'prompt', text: 'anvil (302a300506032b65...) > ' },
-      { type: 'cmd',    text: 'validate' },
-      { type: 'output', text: '' },
-      { type: 'accent', text: '  Chain is VALID' },
-    ];
+    (function() {
+      const lines = [
+        { type: 'prompt', text: 'anvil (no wallet) > ' },
+        { type: 'cmd',    text: 'create-wallet' },
+        { type: 'output', text: '' },
+        { type: 'output', text: '  ──────────────────────────────────────────' },
+        { type: 'output', text: '  New Wallet Created' },
+        { type: 'accent', text: '  Address: 302a300506032b6570032100...' },
+        { type: 'output', text: '  Saved: ./wallets/wallet-1711929600.json' },
+        { type: 'output', text: '' },
+        { type: 'prompt', text: 'anvil (302a300506032b65...) > ' },
+        { type: 'cmd',    text: 'mine' },
+        { type: 'output', text: '' },
+        { type: 'output', text: '  Creating block #1 with 1 transaction(s)...' },
+        { type: 'output', text: '  Mining block #1...' },
+        { type: 'warn',   text: '  Block mined! Nonce: 1847 | Time: 0.42s' },
+        { type: 'accent', text: '  Hash: 000a7f3c9b2e1d4f8a6c5b7e9d2f...' },
+        { type: 'output', text: '  You earned 50 ANV for mining this block!' },
+        { type: 'output', text: '' },
+        { type: 'prompt', text: 'anvil (302a300506032b65...) > ' },
+        { type: 'cmd',    text: 'balance' },
+        { type: 'output', text: '' },
+        { type: 'accent', text: '  Balance: 50 ANV' },
+        { type: 'output', text: '' },
+        { type: 'prompt', text: 'anvil (302a300506032b65...) > ' },
+        { type: 'cmd',    text: 'validate' },
+        { type: 'output', text: '' },
+        { type: 'accent', text: '  Chain is VALID' },
+      ];
 
-    const terminal = document.getElementById('terminal');
-    let lineIdx = 0;
+      const terminal = document.getElementById('terminal');
+      let lineIdx = 0;
 
-    function typeNextLine() {
-      if (lineIdx >= lines.length) {
-        // Add blinking cursor at end
-        const cursor = document.createElement('span');
-        cursor.className = 'typed-cursor';
-        terminal.appendChild(cursor);
-        return;
-      }
-
-      const line = lines[lineIdx];
-      const div = document.createElement('div');
-      const span = document.createElement('span');
-      span.className = line.type;
-
-      if (line.type === 'cmd') {
-        // Type command character by character
-        let charIdx = 0;
-        const prevLine = terminal.lastElementChild;
-        const interval = setInterval(() => {
-          if (charIdx < line.text.length) {
-            span.textContent += line.text[charIdx];
-            charIdx++;
-          } else {
-            clearInterval(interval);
-            lineIdx++;
-            setTimeout(typeNextLine, 200);
-          }
-        }, 50);
-        if (prevLine) {
-          prevLine.appendChild(span);
-        } else {
-          div.appendChild(span);
-          terminal.appendChild(div);
+      function typeNextLine() {
+        if (lineIdx >= lines.length) {
+          const cursor = document.createElement('span');
+          cursor.className = 'typed-cursor';
+          terminal.appendChild(cursor);
+          return;
         }
-        return;
+
+        const line = lines[lineIdx];
+        const div = document.createElement('div');
+        const span = document.createElement('span');
+        span.className = line.type;
+
+        if (line.type === 'cmd') {
+          let charIdx = 0;
+          const prevLine = terminal.lastElementChild;
+          const interval = setInterval(() => {
+            if (charIdx < line.text.length) {
+              span.textContent += line.text[charIdx];
+              charIdx++;
+            } else {
+              clearInterval(interval);
+              lineIdx++;
+              setTimeout(typeNextLine, 300);
+            }
+          }, 45);
+          if (prevLine) prevLine.appendChild(span);
+          else { div.appendChild(span); terminal.appendChild(div); }
+          return;
+        }
+
+        span.textContent = line.text;
+        div.appendChild(span);
+        terminal.appendChild(div);
+        lineIdx++;
+        setTimeout(typeNextLine, line.type === 'prompt' ? 700 : 60);
       }
 
-      span.textContent = line.text;
-      div.appendChild(span);
-      terminal.appendChild(div);
-      lineIdx++;
-
-      const delay = line.type === 'prompt' ? 600 : 80;
-      setTimeout(typeNextLine, delay);
-    }
-
-    // Start after a short delay
-    setTimeout(typeNextLine, 800);
+      setTimeout(typeNextLine, 1200);
+    })();
 
     // ================================================================
-    // Block Visualizer
+    // Code Explorer — syntax-highlighted source snippets
     // ================================================================
-    function shortHash() {
+    (function() {
+      const snippets = {
+        block: `<span class="cmt">// A block holds transactions, links to the previous block,</span>
+<span class="cmt">// and includes a nonce found during proof-of-work mining.</span>
+
+<span class="kw">class</span> <span class="fn">Block</span> {
+  <span class="fn">constructor</span>(index, transactions, previousHash) {
+    <span class="kw">this</span>.index        = index;
+    <span class="kw">this</span>.timestamp    = Date.<span class="fn">now</span>();
+    <span class="kw">this</span>.transactions = transactions;
+    <span class="kw">this</span>.previousHash = previousHash;
+    <span class="kw">this</span>.nonce        = <span class="num">0</span>;
+    <span class="kw">this</span>.hash         = <span class="kw">this</span>.<span class="fn">computeHash</span>();
+  }
+
+  <span class="cmt">// SHA-256 hash of ALL block fields.</span>
+  <span class="cmt">// Change anything and the hash changes completely.</span>
+  <span class="fn">computeHash</span>() {
+    <span class="kw">const</span> data =
+      <span class="kw">this</span>.index +
+      <span class="kw">this</span>.timestamp +
+      JSON.<span class="fn">stringify</span>(<span class="kw">this</span>.transactions) +
+      <span class="kw">this</span>.previousHash +
+      <span class="kw">this</span>.nonce;
+
+    <span class="kw">return</span> <span class="fn">sha256</span>(data);
+  }
+}`,
+        mining: `<span class="cmt">// Proof-of-Work: find a nonce that makes the hash</span>
+<span class="cmt">// start with N zeros (the "difficulty").</span>
+<span class="cmt">// This is intentionally slow — it's what secures the chain.</span>
+
+<span class="fn">mine</span>(difficulty) {
+  <span class="kw">const</span> target = <span class="str">'0'</span>.<span class="fn">repeat</span>(difficulty);
+
+  <span class="kw">while</span> (<span class="kw">this</span>.hash.<span class="fn">substring</span>(<span class="num">0</span>, difficulty) !== target) {
+    <span class="kw">this</span>.nonce++;
+    <span class="kw">this</span>.hash = <span class="kw">this</span>.<span class="fn">computeHash</span>();
+  }
+
+  <span class="cmt">// Found it! The nonce that produces a valid hash.</span>
+  <span class="kw">return</span> <span class="kw">this</span>;
+}
+
+<span class="cmt">// Example at difficulty 3:</span>
+<span class="cmt">//   Nonce 0:    hash = "8f3a2b..."  (no match)</span>
+<span class="cmt">//   Nonce 1:    hash = "c71e9d..."  (no match)</span>
+<span class="cmt">//   ...1847 attempts later...</span>
+<span class="cmt">//   Nonce 1847: hash = "000a7f..."  (3 zeros!)</span>`,
+        transaction: `<span class="cmt">// A transaction: who sends how much to whom.</span>
+<span class="cmt">// Signed with Ed25519 to prove the sender authorized it.</span>
+
+<span class="kw">class</span> <span class="fn">Transaction</span> {
+  <span class="fn">constructor</span>(sender, receiver, amount) {
+    <span class="kw">this</span>.sender    = sender;     <span class="cmt">// public key</span>
+    <span class="kw">this</span>.receiver  = receiver;   <span class="cmt">// public key</span>
+    <span class="kw">this</span>.amount    = amount;
+    <span class="kw">this</span>.timestamp = Date.<span class="fn">now</span>();
+    <span class="kw">this</span>.signature = <span class="kw">null</span>;
+  }
+
+  <span class="cmt">// Sign with private key — proves you own the coins</span>
+  <span class="fn">signTransaction</span>(privateKey) {
+    <span class="kw">const</span> hash = <span class="kw">this</span>.<span class="fn">computeHash</span>();
+    <span class="kw">this</span>.signature = <span class="fn">sign</span>(hash, privateKey);
+  }
+
+  <span class="cmt">// Anyone can verify with the sender's public key</span>
+  <span class="fn">isValid</span>() {
+    <span class="kw">if</span> (<span class="kw">this</span>.sender === <span class="str">'MINING_REWARD'</span>) <span class="kw">return true</span>;
+    <span class="kw">return</span> <span class="fn">verify</span>(<span class="kw">this</span>.<span class="fn">computeHash</span>(), <span class="kw">this</span>.signature, <span class="kw">this</span>.sender);
+  }
+}`,
+        wallet: `<span class="cmt">// A wallet is just a key pair.</span>
+<span class="cmt">// Public key  = your address (share freely)</span>
+<span class="cmt">// Private key = your secret  (NEVER share)</span>
+
+<span class="kw">class</span> <span class="fn">Wallet</span> {
+  <span class="kw">static</span> <span class="fn">create</span>() {
+    <span class="cmt">// Generate Ed25519 key pair using Node.js crypto</span>
+    <span class="kw">const</span> keys = <span class="fn">generateKeyPair</span>();
+    <span class="kw">return new</span> <span class="fn">Wallet</span>(keys.publicKey, keys.privateKey);
+  }
+
+  <span class="cmt">// Create and sign a transaction in one step</span>
+  <span class="fn">createTransaction</span>(receiver, amount) {
+    <span class="kw">const</span> tx = <span class="kw">new</span> <span class="fn">Transaction</span>(
+      <span class="kw">this</span>.publicKey, receiver, amount
+    );
+    tx.<span class="fn">signTransaction</span>(<span class="kw">this</span>.privateKey);
+    <span class="kw">return</span> tx;
+  }
+
+  <span class="cmt">// Save keys to a local JSON file</span>
+  <span class="fn">save</span>(filePath) {
+    fs.<span class="fn">writeFileSync</span>(filePath, JSON.<span class="fn">stringify</span>({
+      publicKey:  <span class="kw">this</span>.publicKey,
+      privateKey: <span class="kw">this</span>.privateKey,
+    }));
+  }
+}`,
+      };
+
+      const codeBody = document.getElementById('codeBody');
+      codeBody.innerHTML = `<pre>${snippets.block}</pre>`;
+
+      document.querySelectorAll('.code-tab').forEach(tab => {
+        tab.addEventListener('click', () => {
+          document.querySelectorAll('.code-tab').forEach(t => t.classList.remove('active'));
+          tab.classList.add('active');
+          const key = tab.dataset.tab;
+          codeBody.innerHTML = `<pre>${snippets[key]}</pre>`;
+        });
+      });
+    })();
+
+    // ================================================================
+    // Interactive Mining Simulator (runs SHA-256 in browser)
+    // ================================================================
+    (function() {
+      const btn = document.getElementById('mineBtn');
+      const log = document.getElementById('simLog');
+      const statNonce = document.getElementById('statNonce');
+      const statTime = document.getElementById('statTime');
+      const statHash = document.getElementById('statHash');
+
+      async function sha256(text) {
+        const data = new TextEncoder().encode(text);
+        const buf = await crypto.subtle.digest('SHA-256', data);
+        return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+      }
+
+      function addLog(text, cls = 'log-muted') {
+        const div = document.createElement('div');
+        div.className = 'log-line ' + cls;
+        div.textContent = text;
+        log.appendChild(div);
+        log.scrollTop = log.scrollHeight;
+      }
+
+      btn.addEventListener('click', async () => {
+        const blockData = document.getElementById('simData').value || 'empty';
+        const difficulty = parseInt(document.getElementById('simDiff').value);
+        const prevHash = document.getElementById('simPrev').value;
+        const target = '0'.repeat(difficulty);
+
+        btn.disabled = true;
+        btn.textContent = 'Mining...';
+        log.innerHTML = '';
+
+        addLog(`Starting proof-of-work (difficulty: ${difficulty})`, 'log-accent');
+        addLog(`Target: hash must start with "${target}"`, 'log-muted');
+        addLog('', 'log-muted');
+
+        let nonce = 0;
+        const startTime = performance.now();
+        let found = false;
+
+        while (!found) {
+          const raw = blockData + prevHash + nonce;
+          const hash = await sha256(raw);
+
+          // Show periodic updates
+          if (nonce % 100 === 0 || nonce < 10) {
+            statNonce.textContent = nonce.toLocaleString();
+            statHash.textContent = hash.substring(0, 7) + '..';
+            statTime.textContent = ((performance.now() - startTime) / 1000).toFixed(2) + 's';
+
+            if (nonce % 500 === 0 && nonce > 0) {
+              addLog(`  nonce ${nonce}: ${hash.substring(0, 20)}...`, 'log-muted');
+            }
+          }
+
+          if (hash.substring(0, difficulty) === target) {
+            found = true;
+            const elapsed = ((performance.now() - startTime) / 1000).toFixed(2);
+
+            addLog('', 'log-muted');
+            addLog(`Block mined!`, 'log-green');
+            addLog(`  Nonce:  ${nonce}`, 'log-accent');
+            addLog(`  Time:   ${elapsed}s`, 'log-accent');
+            addLog(`  Hash:   ${hash}`, 'log-hash');
+            addLog('', 'log-muted');
+            addLog(`The hash starts with "${target}" — proof-of-work complete.`, 'log-green');
+
+            statNonce.textContent = nonce.toLocaleString();
+            statTime.textContent = elapsed + 's';
+            statHash.textContent = hash.substring(0, 7) + '..';
+
+            // Update prev hash for next mine
+            document.getElementById('simPrev').value = hash.substring(0, 18);
+          }
+
+          nonce++;
+
+          // Yield to UI every 200 iterations
+          if (nonce % 200 === 0) {
+            await new Promise(r => setTimeout(r, 0));
+          }
+        }
+
+        btn.disabled = false;
+        btn.textContent = 'Mine Block';
+      });
+    })();
+
+    // ================================================================
+    // Block Visualizer — interactive growing chain
+    // ================================================================
+    (function() {
+      const vis = document.getElementById('chainVis');
+      const addBtn = document.getElementById('addBlockBtn');
       const chars = '0123456789abcdef';
-      let h = '';
-      for (let i = 0; i < 8; i++) h += chars[Math.floor(Math.random() * 16)];
-      return h + '...';
-    }
+      let blockCount = 0;
+      let lastHash = '0000000000000000';
 
-    function createBlockEl(index, prevHash) {
-      const hash = '000' + shortHash();
-      const div = document.createElement('div');
-      div.className = 'block-vis';
-      div.innerHTML = `
-        <div class="block-idx">Block #${index}</div>
-        <div class="field">Nonce: <span>${Math.floor(Math.random() * 5000)}</span></div>
-        <div class="field">Tx: <span>${index === 0 ? 1 : Math.floor(Math.random() * 4) + 1}</span></div>
-        <div class="field">Prev: <span>${prevHash}</span></div>
-        <div class="field">Hash: <span>${hash}</span></div>
-      `;
-      return { el: div, hash };
-    }
-
-    const chainVis = document.getElementById('chainVis');
-    let prevHash = '00000000...';
-
-    for (let i = 0; i < 4; i++) {
-      if (i > 0) {
-        const arrow = document.createElement('div');
-        arrow.className = 'chain-arrow';
-        arrow.innerHTML = '&#x2192;';
-        chainVis.appendChild(arrow);
+      function randHex(len) {
+        let h = '';
+        for (let i = 0; i < len; i++) h += chars[Math.floor(Math.random() * 16)];
+        return h;
       }
-      const { el, hash } = createBlockEl(i, prevHash);
-      chainVis.appendChild(el);
-      prevHash = hash;
-    }
+
+      function addBlock() {
+        if (blockCount > 0) {
+          const arrow = document.createElement('div');
+          arrow.className = 'chain-arrow';
+          arrow.innerHTML = '&#x2192;';
+          vis.appendChild(arrow);
+        }
+
+        const hash = '000' + randHex(13);
+        const nonce = Math.floor(Math.random() * 5000);
+        const txCount = blockCount === 0 ? 1 : Math.floor(Math.random() * 4) + 1;
+
+        const div = document.createElement('div');
+        div.className = 'block-vis mining';
+        div.innerHTML = `
+          <div class="block-idx">Block #${blockCount}</div>
+          <div class="field">Nonce: <span>${nonce}</span></div>
+          <div class="field">Tx: <span>${txCount}</span></div>
+          <div class="field">Prev: <span>${lastHash.substring(0, 12)}..</span></div>
+          <div class="field">Hash: <span class="bh">mining...</span></div>
+        `;
+        vis.appendChild(div);
+        vis.scrollLeft = vis.scrollWidth;
+
+        // Animate mining
+        const hashSpan = div.querySelector('.bh');
+        let tick = 0;
+        const interval = setInterval(() => {
+          hashSpan.textContent = randHex(16) + '..';
+          tick++;
+          if (tick > 12 + Math.random() * 10) {
+            clearInterval(interval);
+            hashSpan.textContent = hash.substring(0, 16) + '..';
+            div.classList.remove('mining');
+            div.classList.add('mined');
+            lastHash = hash;
+          }
+        }, 80);
+
+        blockCount++;
+      }
+
+      // Start with genesis + 2 blocks
+      addBlock();
+      setTimeout(() => addBlock(), 400);
+      setTimeout(() => addBlock(), 800);
+
+      addBtn.addEventListener('click', addBlock);
+    })();
   </script>
 </body>
 </html>

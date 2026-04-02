@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Anvil — Terms of Service, Privacy Policy & Licenses</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg:#050508;--surface:#0b0b12;--surface2:#101019;
+      --border:#1c1c30;--text:#e8e8f0;--muted:#5e5e7e;--dim:#3a3a55;
+      --accent:#7c6df0;--accent2:#a78bfa;--green:#34d399;--orange:#fbbf24;--cyan:#22d3ee;
+      --glow:rgba(124,109,240,0.15);
+    }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: 'SF Mono','Fira Code','Cascadia Code','JetBrains Mono','Consolas',monospace;
+      background: var(--bg); color: var(--text); line-height: 1.8; overflow-x: hidden;
+    }
+    a { color: var(--accent2); text-decoration: none; } a:hover { color: #fff; text-decoration: underline; }
+    ::selection { background: var(--accent); color: #fff; }
+
+    .nav-wrap {
+      position: sticky; top: 0; z-index: 50;
+      background: rgba(5,5,8,.9); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border);
+    }
+    nav { max-width: 900px; margin: 0 auto; padding: 16px 28px; display: flex; justify-content: space-between; align-items: center; }
+    .logo { font-size: 1rem; font-weight: 900; color: var(--text); letter-spacing: 3px; text-decoration: none; }
+    .back-link { color: var(--muted); font-size: .78rem; } .back-link:hover { color: var(--text); text-decoration: none; }
+
+    .container { max-width: 900px; margin: 0 auto; padding: 60px 28px 120px; }
+
+    h1 { font-size: 2rem; font-weight: 900; letter-spacing: -1px; margin-bottom: 8px; }
+    .page-sub { color: var(--muted); font-size: .85rem; margin-bottom: 48px; }
+
+    .toc { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 28px; margin-bottom: 60px; }
+    .toc h2 { font-size: .85rem; margin-bottom: 16px; color: var(--accent2); }
+    .toc ol { padding-left: 20px; }
+    .toc li { margin-bottom: 6px; }
+    .toc a { color: var(--muted); font-size: .78rem; } .toc a:hover { color: var(--text); }
+
+    .legal-section { margin-bottom: 60px; padding-top: 20px; }
+    .legal-section h2 {
+      font-size: 1.2rem; font-weight: 800; margin-bottom: 24px;
+      padding-bottom: 12px; border-bottom: 1px solid var(--border);
+      color: var(--accent2);
+    }
+    .legal-section h3 { font-size: .9rem; font-weight: 700; margin: 28px 0 12px; color: var(--text); }
+    .legal-section p { color: var(--muted); font-size: .78rem; margin-bottom: 16px; line-height: 2; }
+    .legal-section ul, .legal-section ol { padding-left: 24px; margin-bottom: 16px; }
+    .legal-section li { color: var(--muted); font-size: .78rem; line-height: 2; margin-bottom: 4px; }
+    .legal-section strong { color: var(--text); }
+
+    .license-block {
+      background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+      padding: 24px; margin: 20px 0; font-size: .72rem; color: var(--muted); line-height: 1.8;
+      white-space: pre-wrap; overflow-x: auto;
+    }
+
+    .disclaimer-banner {
+      background: var(--surface); border: 1px solid var(--orange); border-radius: 14px;
+      padding: 28px; margin-bottom: 48px; text-align: center;
+    }
+    .disclaimer-banner h3 { color: var(--orange); font-size: .9rem; margin-bottom: 10px; }
+    .disclaimer-banner p { color: var(--muted); font-size: .78rem; max-width: 600px; margin: 0 auto; }
+
+    .divider { height: 1px; background: var(--border); margin: 60px 0; }
+
+    footer {
+      border-top: 1px solid var(--border); padding: 32px 0; text-align: center;
+      max-width: 900px; margin: 0 auto;
+    }
+    .footer-links { display: flex; gap: 24px; justify-content: center; margin-bottom: 16px; flex-wrap: wrap; }
+    .footer-links a { color: var(--muted); font-size: .75rem; } .footer-links a:hover { color: var(--text); }
+    .footer-copy { color: var(--dim); font-size: .68rem; }
+
+    @media (max-width: 600px) {
+      .container { padding: 40px 20px 80px; }
+      h1 { font-size: 1.5rem; }
+    }
+  </style>
+</head>
+<body>
+  <div class="nav-wrap">
+    <nav>
+      <a href="index.html" class="logo">ANVIL</a>
+      <a href="index.html" class="back-link">&larr; Back to Home</a>
+    </nav>
+  </div>
+
+  <div class="container">
+    <h1>Legal</h1>
+    <p class="page-sub">Terms of Service, Privacy Policy, Disclaimer, and Open-Source Licenses for the Anvil project. Last updated: April 2, 2026.</p>
+
+    <div class="disclaimer-banner">
+      <h3>Educational Sandbox Only</h3>
+      <p>Anvil is not a cryptocurrency, token, or financial product. The ANV coin has no monetary value. This software exists solely for learning how blockchain technology works.</p>
+    </div>
+
+    <div class="toc">
+      <h2>Table of Contents</h2>
+      <ol>
+        <li><a href="#tos">Terms of Service</a></li>
+        <li><a href="#privacy">Privacy Policy</a></li>
+        <li><a href="#disclaimer">Disclaimer & Risk Acknowledgment</a></li>
+        <li><a href="#acceptable-use">Acceptable Use Policy</a></li>
+        <li><a href="#contributions">Contribution Guidelines & CLA</a></li>
+        <li><a href="#security">Security Policy</a></li>
+        <li><a href="#mit-license">MIT License (Anvil)</a></li>
+        <li><a href="#third-party">Third-Party Licenses</a></li>
+        <li><a href="#node-js-license">Node.js License</a></li>
+        <li><a href="#express-license">Express.js License</a></li>
+        <li><a href="#openssl-license">OpenSSL / Cryptographic Notice</a></li>
+        <li><a href="#trademark">Trademark Notice</a></li>
+        <li><a href="#contact">Contact Information</a></li>
+      </ol>
+    </div>
+
+    <!-- ════════════════════════════════════════════════════════════ -->
+    <!-- 1. TERMS OF SERVICE                                         -->
+    <!-- ════════════════════════════════════════════════════════════ -->
+    <section class="legal-section" id="tos">
+      <h2>1. Terms of Service</h2>
+
+      <h3>1.1 Acceptance of Terms</h3>
+      <p>By accessing, downloading, installing, or using Anvil ("the Software"), you agree to be bound by these Terms of Service ("Terms"). If you do not agree to these Terms, you must not use the Software. These Terms constitute a legally binding agreement between you ("User," "you," or "your") and the Anvil project contributors ("we," "us," or "our").</p>
+
+      <h3>1.2 Nature of the Project</h3>
+      <p>Anvil is an open-source educational software project designed to demonstrate and teach how blockchain technology works at a fundamental level. It is a <strong>sandbox environment</strong> that creates a simulated blockchain running entirely on your local machine or local network. The Software is not, and is not intended to be, a production-grade blockchain, cryptocurrency, distributed ledger, or financial system of any kind.</p>
+
+      <h3>1.3 The ANV Coin</h3>
+      <p>The native coin "ANV" (or any custom coin name configured by the user) is a <strong>simulated digital token that exists only within the Software's local runtime</strong>. ANV coins:</p>
+      <ul>
+        <li>Have absolutely no real-world monetary value, utility value, or exchange value</li>
+        <li>Cannot be traded on any exchange, marketplace, or financial platform</li>
+        <li>Cannot be converted to or exchanged for any real currency, cryptocurrency, or asset</li>
+        <li>Exist only in the local memory and/or storage of the machine running the Software</li>
+        <li>Are not tokens, securities, commodities, or financial instruments under any jurisdiction</li>
+        <li>Are not recorded on any public blockchain or distributed ledger</li>
+      </ul>
+
+      <h3>1.4 No Financial Product</h3>
+      <p>Anvil is <strong>not</strong> any of the following:</p>
+      <ul>
+        <li>A cryptocurrency or virtual currency</li>
+        <li>A token sale, initial coin offering (ICO), or token generation event</li>
+        <li>A decentralized finance (DeFi) protocol or application</li>
+        <li>A payment system, payment processor, or money transmitter</li>
+        <li>A securities offering or investment contract</li>
+        <li>A digital asset exchange or trading platform</li>
+        <li>A wallet for storing real digital assets</li>
+        <li>A mining pool or staking service</li>
+      </ul>
+      <p>Nothing in this Software, its documentation, landing page, or associated materials constitutes financial advice, investment advice, trading advice, or any other sort of professional advice. You should not make any financial decision based on anything related to this project.</p>
+
+      <h3>1.5 Educational Use Only</h3>
+      <p>The Software is intended exclusively for:</p>
+      <ul>
+        <li>Learning how blockchain data structures work (blocks, chains, hashes)</li>
+        <li>Understanding proof-of-work mining algorithms</li>
+        <li>Experimenting with cryptographic signing and verification</li>
+        <li>Studying peer-to-peer consensus mechanisms</li>
+        <li>Academic research and coursework</li>
+        <li>Personal skill development in distributed systems</li>
+        <li>Building upon the code for your own educational projects</li>
+      </ul>
+
+      <h3>1.6 Modifications and Forks</h3>
+      <p>You are free to modify, fork, and redistribute the Software under the terms of the MIT License. However, if you create a derivative work, you are solely responsible for ensuring that your derivative work complies with all applicable laws and regulations in your jurisdiction, including but not limited to securities laws, money transmission laws, and consumer protection regulations.</p>
+
+      <h3>1.7 No Guarantees of Accuracy</h3>
+      <p>While we strive to implement blockchain concepts correctly for educational purposes, we make no guarantee that the Software perfectly replicates the behavior of any specific production blockchain (e.g., Bitcoin, Ethereum). Certain features are intentionally simplified for clarity, as documented in the README.</p>
+
+      <h3>1.8 Termination</h3>
+      <p>These Terms are effective until terminated. Your rights under these Terms will terminate automatically if you fail to comply with any of their provisions. Upon termination, you must cease all use of the Software and destroy all copies in your possession.</p>
+
+      <h3>1.9 Governing Law</h3>
+      <p>These Terms shall be governed by and construed in accordance with applicable laws, without regard to conflict of law principles. Any disputes arising out of these Terms or the use of the Software shall be resolved through good-faith negotiation.</p>
+
+      <h3>1.10 Changes to Terms</h3>
+      <p>We reserve the right to modify these Terms at any time. Changes will be reflected by updating the "Last updated" date at the top of this page. Your continued use of the Software after changes constitutes acceptance of the revised Terms.</p>
+    </section>
+
+    <div class="divider"></div>
+
+    <!-- ════════════════════════════════════════════════════════════ -->
+    <!-- 2. PRIVACY POLICY                                           -->
+    <!-- ════════════════════════════════════════════════════════════ -->
+    <section class="legal-section" id="privacy">
+      <h2>2. Privacy Policy</h2>
+
+      <h3>2.1 Data Collection</h3>
+      <p>Anvil does <strong>not</strong> collect, process, transmit, store, or share any personal data, usage data, analytics, telemetry, crash reports, or any other information about you or your system. The Software runs entirely on your local machine with zero network calls to external services (other than peer nodes you explicitly configure on your own local network).</p>
+
+      <h3>2.2 Local Data Storage</h3>
+      <p>The following data is stored locally on your machine and never leaves it:</p>
+      <ul>
+        <li><strong>Wallet key files</strong> (JSON files containing Ed25519 key pairs) stored in the <code>wallets/</code> directory</li>
+        <li><strong>Blockchain data</strong> (blocks, transactions) stored in memory during runtime</li>
+        <li><strong>Node.js module cache</strong> (standard npm package files in <code>node_modules/</code>)</li>
+      </ul>
+      <p>No data is persisted to disk beyond wallet key files unless you explicitly implement such functionality.</p>
+
+      <h3>2.3 Network Communication</h3>
+      <p>When you run the multi-node feature, nodes communicate over HTTP on your local machine (localhost). This communication:</p>
+      <ul>
+        <li>Occurs only between nodes you explicitly start on your own machine</li>
+        <li>Uses only the ports you configure (default: 3001, 3002, 3003)</li>
+        <li>Contains only blockchain data (blocks, transactions, peer lists)</li>
+        <li>Does not include any personal information</li>
+        <li>Is not encrypted (HTTP, not HTTPS) since it is local-only</li>
+        <li>Does not connect to any external servers, APIs, or services</li>
+      </ul>
+
+      <h3>2.4 Third-Party Services</h3>
+      <p>Anvil does not integrate with, send data to, or receive data from any third-party services, analytics platforms, advertising networks, or external APIs. The Software has one runtime dependency (Express.js) which is used solely as a local HTTP server and does not perform any data collection.</p>
+
+      <h3>2.5 Cookies and Tracking</h3>
+      <p>The Anvil landing page (this website) does not use cookies, local storage, session storage, tracking pixels, fingerprinting, or any other client-side tracking mechanism. No analytics scripts are loaded.</p>
+
+      <h3>2.6 Children's Privacy</h3>
+      <p>Anvil does not knowingly collect any information from anyone, including children under the age of 13 (or the applicable age in your jurisdiction). Since the Software collects no data at all, there is no risk of children's data being collected.</p>
+
+      <h3>2.7 GDPR, CCPA, and Other Regulations</h3>
+      <p>Since Anvil does not collect, process, or store any personal data, the typical obligations under the General Data Protection Regulation (GDPR), California Consumer Privacy Act (CCPA), and similar data protection regulations do not apply in the traditional sense. There is no data to access, delete, port, or restrict processing of.</p>
+
+      <h3>2.8 Changes to Privacy Policy</h3>
+      <p>If we ever modify Anvil to include any form of data collection (which is not planned), we will update this Privacy Policy before implementing such changes and clearly communicate the modifications.</p>
+    </section>
+
+    <div class="divider"></div>
+
+    <!-- ════════════════════════════════════════════════════════════ -->
+    <!-- 3. DISCLAIMER                                               -->
+    <!-- ════════════════════════════════════════════════════════════ -->
+    <section class="legal-section" id="disclaimer">
+      <h2>3. Disclaimer & Risk Acknowledgment</h2>
+
+      <h3>3.1 No Warranty</h3>
+      <p>THE SOFTWARE IS PROVIDED "AS IS" AND "AS AVAILABLE," WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, TITLE, AND NONINFRINGEMENT. THE ENTIRE RISK AS TO THE QUALITY AND PERFORMANCE OF THE SOFTWARE IS WITH YOU.</p>
+
+      <h3>3.2 Limitation of Liability</h3>
+      <p>IN NO EVENT SHALL THE AUTHORS, COPYRIGHT HOLDERS, CONTRIBUTORS, OR ANY AFFILIATED PARTIES BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, CONSEQUENTIAL, OR PUNITIVE DAMAGES (INCLUDING BUT NOT LIMITED TO PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES, LOSS OF USE, DATA, OR PROFITS, OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.</p>
+
+      <h3>3.3 Security Limitations</h3>
+      <p>While Anvil uses real cryptographic primitives (SHA-256 for hashing, Ed25519 for digital signatures), the overall system architecture is intentionally simplified for educational purposes. Known security limitations include but are not limited to:</p>
+      <ul>
+        <li><strong>No Merkle trees</strong> -- transactions are stored as a flat array, not a cryptographic hash tree</li>
+        <li><strong>No UTXO model</strong> -- balances are computed by scanning the entire chain, not tracking unspent outputs</li>
+        <li><strong>No mempool prioritization</strong> -- transactions are processed strictly first-come, first-served</li>
+        <li><strong>No transaction fees</strong> -- only block rewards incentivize mining</li>
+        <li><strong>No difficulty adjustment</strong> -- mining difficulty is a static configuration value</li>
+        <li><strong>No account nonces</strong> -- replay protection depends on balance checks, not sequence numbers</li>
+        <li><strong>Unencrypted key storage</strong> -- private keys are saved as plain-text JSON files</li>
+        <li><strong>HTTP networking</strong> -- node communication is unencrypted HTTP, not P2P with TLS</li>
+        <li><strong>No fork resolution</strong> -- consensus considers only chain length, not cumulative proof-of-work</li>
+        <li><strong>No Sybil resistance</strong> -- no mechanism prevents one actor from running many nodes</li>
+        <li><strong>No eclipse attack protection</strong> -- nodes trust any peer that connects</li>
+        <li><strong>No block size enforcement</strong> -- the limit is a soft configuration, not consensus-enforced</li>
+        <li><strong>Single-threaded mining</strong> -- no parallel hash computation</li>
+        <li><strong>In-memory blockchain</strong> -- the chain is lost when the process exits unless explicitly saved</li>
+      </ul>
+      <p><strong>Do not use this Software to secure anything of value.</strong> It is designed for learning, not production use.</p>
+
+      <h3>3.4 No Endorsement</h3>
+      <p>Mention of any specific blockchain project (Bitcoin, Ethereum, etc.) in documentation or code comments is purely for educational comparison purposes and does not constitute an endorsement of, association with, or affiliation with those projects.</p>
+
+      <h3>3.5 Regulatory Compliance</h3>
+      <p>Users are solely responsible for determining whether their use of the Software complies with applicable laws and regulations in their jurisdiction. While Anvil itself is not a regulated financial product, modifications or derivative works may fall under financial regulations depending on how they are used.</p>
+    </section>
+
+    <div class="divider"></div>
+
+    <!-- ════════════════════════════════════════════════════════════ -->
+    <!-- 4. ACCEPTABLE USE                                           -->
+    <!-- ════════════════════════════════════════════════════════════ -->
+    <section class="legal-section" id="acceptable-use">
+      <h2>4. Acceptable Use Policy</h2>
+
+      <h3>4.1 Permitted Uses</h3>
+      <p>You may use the Software for:</p>
+      <ul>
+        <li>Personal learning and education</li>
+        <li>Academic research, coursework, and teaching</li>
+        <li>Creating educational content (blog posts, tutorials, videos)</li>
+        <li>Prototyping and experimentation</li>
+        <li>Contributing improvements back to the project</li>
+      </ul>
+
+      <h3>4.2 Prohibited Uses</h3>
+      <p>You must not use the Software to:</p>
+      <ul>
+        <li>Create, launch, or promote any real cryptocurrency, token, or digital asset</li>
+        <li>Solicit investments or conduct any form of securities offering</li>
+        <li>Operate a money transmission or payment processing service</li>
+        <li>Deceive others into believing ANV coins have real monetary value</li>
+        <li>Conduct fraudulent activities or scams</li>
+        <li>Circumvent any applicable laws or regulations</li>
+        <li>Claim that the Software provides production-grade security</li>
+        <li>Store real private keys or sensitive credentials using the wallet system</li>
+      </ul>
+
+      <h3>4.3 Misrepresentation</h3>
+      <p>You must not misrepresent the nature of this Software. If you create derivative works, educational content, or presentations based on Anvil, you must clearly state that it is an educational sandbox and that ANV coins have no monetary value.</p>
+    </section>
+
+    <div class="divider"></div>
+
+    <!-- ════════════════════════════════════════════════════════════ -->
+    <!-- 5. CONTRIBUTIONS                                            -->
+    <!-- ════════════════════════════════════════════════════════════ -->
+    <section class="legal-section" id="contributions">
+      <h2>5. Contribution Guidelines & Contributor License Agreement</h2>
+
+      <h3>5.1 Open Contributions</h3>
+      <p>Anvil welcomes contributions from the community. By submitting a pull request, issue, or any other form of contribution to the Anvil repository, you agree to the following terms.</p>
+
+      <h3>5.2 License Grant</h3>
+      <p>By contributing code, documentation, or other materials to the Anvil project, you grant the project maintainers a perpetual, worldwide, non-exclusive, royalty-free, irrevocable license to use, reproduce, modify, display, distribute, and sublicense your contribution as part of the Software under the MIT License.</p>
+
+      <h3>5.3 Original Work</h3>
+      <p>You represent that each of your contributions is your original creation and that you have the legal right to grant the license described above. If your contribution includes work created by others, you must clearly identify the source and ensure it is compatible with the MIT License.</p>
+
+      <h3>5.4 No Obligation</h3>
+      <p>The project maintainers are under no obligation to accept, merge, or maintain any contribution. Contributions may be modified, rewritten, or removed at the maintainers' discretion.</p>
+
+      <h3>5.5 Code of Conduct</h3>
+      <p>Contributors are expected to maintain a respectful and constructive environment. Harassment, discrimination, and disruptive behavior will not be tolerated.</p>
+    </section>
+
+    <div class="divider"></div>
+
+    <!-- ════════════════════════════════════════════════════════════ -->
+    <!-- 6. SECURITY POLICY                                          -->
+    <!-- ════════════════════════════════════════════════════════════ -->
+    <section class="legal-section" id="security">
+      <h2>6. Security Policy</h2>
+
+      <h3>6.1 Scope</h3>
+      <p>Anvil is educational software with known security limitations (see Section 3.3). "Security vulnerabilities" in the context of this project refer to issues that could:</p>
+      <ul>
+        <li>Allow arbitrary code execution on a machine running the Software</li>
+        <li>Enable unauthorized file system access beyond the project directory</li>
+        <li>Introduce supply chain risks through dependencies</li>
+        <li>Expose users to cross-site scripting (XSS) or injection attacks via the node HTTP API</li>
+      </ul>
+      <p>Issues related to the educational simplifications listed in Section 3.3 (e.g., "the chain doesn't use Merkle trees") are not considered security vulnerabilities -- they are intentional design decisions for educational clarity.</p>
+
+      <h3>6.2 Reporting</h3>
+      <p>If you discover a security issue within the scope defined above, please report it by opening an issue on the GitHub repository or contacting the maintainers directly. Do not exploit the vulnerability or disclose it publicly before giving us a reasonable opportunity to address it.</p>
+
+      <h3>6.3 Response</h3>
+      <p>We will make reasonable efforts to address legitimate security reports in a timely manner. However, as this is an educational project maintained by volunteers, we cannot guarantee specific response times or SLAs.</p>
+    </section>
+
+    <div class="divider"></div>
+
+    <!-- ════════════════════════════════════════════════════════════ -->
+    <!-- 7. MIT LICENSE                                              -->
+    <!-- ════════════════════════════════════════════════════════════ -->
+    <section class="legal-section" id="mit-license">
+      <h2>7. MIT License (Anvil)</h2>
+      <p>The Anvil project is released under the MIT License, one of the most permissive open-source licenses available.</p>
+      <div class="license-block">MIT License
+
+Copyright (c) 2026 Anvil Contributors
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.</div>
+    </section>
+
+    <div class="divider"></div>
+
+    <!-- ════════════════════════════════════════════════════════════ -->
+    <!-- 8. THIRD-PARTY LICENSES                                     -->
+    <!-- ════════════════════════════════════════════════════════════ -->
+    <section class="legal-section" id="third-party">
+      <h2>8. Third-Party Licenses</h2>
+      <p>Anvil uses the following third-party open-source software. Each is distributed under its own license, included below. Anvil has a single runtime dependency (Express.js), which in turn depends on several sub-packages. The key licenses are listed here.</p>
+
+      <h3>8.1 Dependency Overview</h3>
+      <ul>
+        <li><strong>express</strong> (v4.18.x) -- MIT License</li>
+        <li><strong>body-parser</strong> -- MIT License (bundled with Express)</li>
+        <li><strong>content-type</strong> -- MIT License</li>
+        <li><strong>cookie</strong> -- MIT License</li>
+        <li><strong>debug</strong> -- MIT License</li>
+        <li><strong>depd</strong> -- MIT License</li>
+        <li><strong>destroy</strong> -- MIT License</li>
+        <li><strong>encodeurl</strong> -- MIT License</li>
+        <li><strong>escape-html</strong> -- MIT License</li>
+        <li><strong>etag</strong> -- MIT License</li>
+        <li><strong>finalhandler</strong> -- MIT License</li>
+        <li><strong>fresh</strong> -- MIT License</li>
+        <li><strong>http-errors</strong> -- MIT License</li>
+        <li><strong>merge-descriptors</strong> -- MIT License</li>
+        <li><strong>methods</strong> -- MIT License</li>
+        <li><strong>mime</strong> -- MIT License</li>
+        <li><strong>ms</strong> -- MIT License</li>
+        <li><strong>on-finished</strong> -- MIT License</li>
+        <li><strong>parseurl</strong> -- MIT License</li>
+        <li><strong>path-to-regexp</strong> -- MIT License</li>
+        <li><strong>proxy-addr</strong> -- MIT License</li>
+        <li><strong>qs</strong> -- BSD-3-Clause License</li>
+        <li><strong>range-parser</strong> -- MIT License</li>
+        <li><strong>raw-body</strong> -- MIT License</li>
+        <li><strong>safe-buffer</strong> -- MIT License</li>
+        <li><strong>safer-buffer</strong> -- MIT License</li>
+        <li><strong>send</strong> -- MIT License</li>
+        <li><strong>serve-static</strong> -- MIT License</li>
+        <li><strong>setprototypeof</strong> -- ISC License</li>
+        <li><strong>statuses</strong> -- MIT License</li>
+        <li><strong>type-is</strong> -- MIT License</li>
+        <li><strong>unpipe</strong> -- MIT License</li>
+        <li><strong>utils-merge</strong> -- MIT License</li>
+        <li><strong>vary</strong> -- MIT License</li>
+      </ul>
+      <p>All MIT-licensed dependencies grant permission to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the software, provided the copyright notice and permission notice are included.</p>
+    </section>
+
+    <div class="divider"></div>
+
+    <!-- ════════════════════════════════════════════════════════════ -->
+    <!-- 9. NODE.JS LICENSE                                          -->
+    <!-- ════════════════════════════════════════════════════════════ -->
+    <section class="legal-section" id="node-js-license">
+      <h2>9. Node.js License</h2>
+      <p>Anvil runs on Node.js, which is not bundled with the Software but is required as a runtime. Node.js is licensed under the following terms:</p>
+      <div class="license-block">Copyright Node.js contributors. All rights reserved.
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to
+deal in the Software without restriction, including without limitation the
+rights to use, copy, modify, merge, publish, distribute, sublicense, and/or
+sell copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
+IN THE SOFTWARE.</div>
+      <p>Node.js also includes components under various other licenses (ICU, V8, libuv, OpenSSL, zlib, etc.). For the complete license information, see the Node.js repository at <a href="https://github.com/nodejs/node/blob/main/LICENSE">github.com/nodejs/node</a>.</p>
+    </section>
+
+    <div class="divider"></div>
+
+    <!-- ════════════════════════════════════════════════════════════ -->
+    <!-- 10. EXPRESS.JS LICENSE                                      -->
+    <!-- ════════════════════════════════════════════════════════════ -->
+    <section class="legal-section" id="express-license">
+      <h2>10. Express.js License</h2>
+      <p>Express.js is the sole runtime dependency of Anvil, used for the node HTTP server feature.</p>
+      <div class="license-block">(The MIT License)
+
+Copyright (c) 2009-2014 TJ Holowaychuk <tj@vision-media.ca>
+Copyright (c) 2013-2014 Roman Shtylman <shtylman+expressjs@gmail.com>
+Copyright (c) 2014-2015 Douglas Christopher Wilson <doug@somethingdoug.com>
+
+Permission is hereby granted, free of charge, to any person obtaining
+a copy of this software and associated documentation files (the
+'Software'), to deal in the Software without restriction, including
+without limitation the rights to use, copy, modify, merge, publish,
+distribute, sublicense, and/or sell copies of the Software, and to
+permit persons to whom the Software is furnished to do so, subject to
+the following conditions:
+
+The above copyright notice and this permission notice shall be
+included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED 'AS IS', WITHOUT WARRANTY OF ANY KIND,
+EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.</div>
+    </section>
+
+    <div class="divider"></div>
+
+    <!-- ════════════════════════════════════════════════════════════ -->
+    <!-- 11. OPENSSL / CRYPTO NOTICE                                 -->
+    <!-- ════════════════════════════════════════════════════════════ -->
+    <section class="legal-section" id="openssl-license">
+      <h2>11. OpenSSL / Cryptographic Notice</h2>
+      <p>Anvil uses the built-in Node.js <code>crypto</code> module for SHA-256 hashing and Ed25519 digital signatures. The Node.js <code>crypto</code> module is powered by OpenSSL (or BoringSSL / quictls depending on the Node.js build).</p>
+
+      <h3>11.1 Export Compliance</h3>
+      <p>This Software includes cryptographic functionality. Depending on your jurisdiction, the import, export, or use of cryptographic software may be subject to regulation. You are solely responsible for complying with any such restrictions in your jurisdiction. The cryptographic functionality in Anvil is provided by the Node.js runtime, which you install separately.</p>
+
+      <h3>11.2 Cryptographic Primitives Used</h3>
+      <ul>
+        <li><strong>SHA-256</strong> (Secure Hash Algorithm 256-bit) -- used for block hashing and transaction hashing</li>
+        <li><strong>Ed25519</strong> (Edwards-curve Digital Signature Algorithm) -- used for transaction signing and verification</li>
+      </ul>
+      <p>Both algorithms are well-established, widely reviewed, and considered secure for their intended purposes. However, as noted in Section 3.3, the <em>system architecture</em> around these primitives is simplified for educational purposes and should not be relied upon for security.</p>
+
+      <h3>11.3 OpenSSL License</h3>
+      <p>OpenSSL is licensed under the Apache License 2.0 (as of OpenSSL 3.0). For the full license text, see <a href="https://www.openssl.org/source/license.html">openssl.org/source/license.html</a>.</p>
+    </section>
+
+    <div class="divider"></div>
+
+    <!-- ════════════════════════════════════════════════════════════ -->
+    <!-- 12. TRADEMARK                                               -->
+    <!-- ════════════════════════════════════════════════════════════ -->
+    <section class="legal-section" id="trademark">
+      <h2>12. Trademark Notice</h2>
+      <p>The name "Anvil" as used in this project refers solely to this open-source educational blockchain software. It is not a registered trademark. The project makes no claim to exclusivity over the name.</p>
+      <p>All other trademarks, trade names, and brand names mentioned in the Software, documentation, or this page (including but not limited to Bitcoin, Ethereum, Node.js, Express.js, GitHub, and SHA-256) are the property of their respective owners and are used here solely for identification and educational reference purposes. Their use does not imply endorsement, sponsorship, or affiliation.</p>
+    </section>
+
+    <div class="divider"></div>
+
+    <!-- ════════════════════════════════════════════════════════════ -->
+    <!-- 13. CONTACT                                                 -->
+    <!-- ════════════════════════════════════════════════════════════ -->
+    <section class="legal-section" id="contact">
+      <h2>13. Contact Information</h2>
+      <p>For questions about these Terms, the Privacy Policy, or the Anvil project in general:</p>
+      <ul>
+        <li><strong>GitHub:</strong> <a href="https://github.com/ssm-official/anvil-chain">github.com/ssm-official/anvil-chain</a></li>
+        <li><strong>X / Twitter:</strong> <a href="https://x.com/S_S_M_X">@S_S_M_X</a></li>
+      </ul>
+      <p>For security issues, please see Section 6 (Security Policy).</p>
+    </section>
+
+    <footer>
+      <div class="footer-links">
+        <a href="index.html">Home</a>
+        <a href="https://github.com/ssm-official/anvil-chain" target="_blank">GitHub</a>
+        <a href="https://x.com/S_S_M_X" target="_blank">@S_S_M_X</a>
+      </div>
+      <p class="footer-copy">Anvil is open-source under the MIT License. Educational sandbox only. No real cryptocurrency involved.</p>
+    </footer>
+  </div>
+</body>
+</html>

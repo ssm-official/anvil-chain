@@ -25,6 +25,16 @@ module.exports = {
   // ------ Network ------
   DEFAULT_PORT: 3001,        // Default port for the node HTTP server.
 
+  // ------ Smart Contracts ------
+  ENABLE_CONTRACTS: true,          // Turn on the smart contract engine.
+  CONTRACT_GAS_LIMIT: 1000,        // Max operations per contract call.
+                                   // Prevents infinite loops from freezing the chain.
+
+  // ------ NFTs ------
+  ENABLE_NFTS: true,               // Turn on the NFT system.
+  NFT_MINT_COST: 5,                // Cost in ANV to mint an NFT.
+                                   // This goes to the miner of the block.
+
   // ------ Genesis Block ------
   GENESIS_MESSAGE: 'The Times 01/Apr/2026 Anvil chain forged.',
 };

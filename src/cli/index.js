@@ -3,13 +3,11 @@
 // ============================================================================
 // Anvil Chain CLI
 // ============================================================================
-// Type commands freely OR use interactive menus.
-// /help opens an arrow-key menu. You can also type /mine directly.
+// Uses inquirer for ALL input — no readline conflicts.
+// Type commands in the input prompt, or just press Enter for the menu.
 // ============================================================================
 
-const readline = require('readline');
 const path = require('path');
-const fs = require('fs');
 const Blockchain = require('../blockchain/chain');
 const Wallet = require('../blockchain/wallet');
 const config = require('../../config');
@@ -18,10 +16,9 @@ const config = require('../../config');
 const blockchain = new Blockchain();
 const wallets = [];
 let activeIdx = -1;
-function w() { return activeIdx >= 0 ? wallets[activeIdx] : null; }
+function aw() { return activeIdx >= 0 ? wallets[activeIdx] : null; }
 
-// inquirer loaded async (it's ESM)
-let inquirer = null;
+let inq = null; // inquirer module (loaded async)
 
 // ============================================================================
 // UI
@@ -37,7 +34,6 @@ function header(t){console.log('\n  '+ln()+'\n  '+c.bold+c.purple+t+c.reset+'\n 
 function sub(t){console.log('\n  '+c.cyan+c.bold+t+c.reset)}
 function row(l,v){console.log('  '+c.gray+l+':'+c.reset+' '+v)}
 function ok(m){console.log('\n  '+c.green+m+c.reset)}
-function warn(m){console.log('\n  '+c.yellow+m+c.reset)}
 function err(m){console.log('\n  '+c.red+m+c.reset)}
 function gap(){console.log('')}
 
@@ -49,117 +45,227 @@ function short(a) {
 }
 
 function needW() {
-  if (!w()) { err('No wallet active. Run /wallet create first.'); return false; }
+  if (!aw()) { err('No wallet active. Run /wallet create'); return false; }
   return true;
 }
 
 // ============================================================================
-// INTERACTIVE MENUS (inquirer)
+// PROMPT — single inquirer input, handles typed commands or opens menu
 // ============================================================================
 
-async function menuMain() {
-  const { action } = await inquirer.default.prompt([{
+async function prompt() {
+  const wl = aw();
+  const tag = wl ? `#${activeIdx+1} ${short(wl.publicKey)}` : 'no wallet';
+  const blocks = blockchain.chain.length;
+  const label = `${c.purple}anvil${c.reset} ${c.dim}[${blocks}]${c.reset} ${c.gray}(${tag})${c.reset} ${c.cyan}>${c.reset}`;
+
+  const { input } = await inq.prompt([{
+    type: 'input',
+    name: 'input',
+    message: label,
+    prefix: '',
+  }]);
+
+  const trimmed = input.trim();
+
+  if (!trimmed) {
+    // Empty enter = open the main menu
+    await runMenu();
+  } else {
+    await handleTyped(trimmed);
+  }
+
+  return prompt();
+}
+
+// ============================================================================
+// MAIN MENU
+// ============================================================================
+
+async function runMenu() {
+  const { action } = await inq.prompt([{
     type: 'list',
     name: 'action',
     message: 'What do you want to do?',
-    pageSize: 15,
+    pageSize: 20,
     choices: [
-      new inquirer.default.Separator('--- Wallet ---'),
-      { name: 'Create a new wallet', value: 'wallet create' },
-      { name: 'List all wallets', value: 'wallet list' },
-      { name: 'Switch active wallet', value: 'wallet switch' },
-      { name: 'Wallet info + full address', value: 'wallet info' },
-      { name: 'Load wallet from file', value: 'wallet load' },
-      new inquirer.default.Separator('--- Blockchain ---'),
+      new inq.Separator(`${c.dim}--- Wallet ---${c.reset}`),
+      { name: 'Create a new wallet', value: 'wallet-create' },
+      { name: 'List all wallets', value: 'wallet-list' },
+      { name: 'Switch active wallet', value: 'wallet-switch' },
+      { name: 'Wallet info + full address', value: 'wallet-info' },
+      { name: 'Load wallet from file', value: 'wallet-load' },
+      new inq.Separator(`${c.dim}--- Blockchain ---${c.reset}`),
       { name: 'Mine a block', value: 'mine' },
       { name: 'Check balance', value: 'balance' },
       { name: 'Send coins', value: 'send' },
       { name: 'View the chain', value: 'chain' },
-      { name: 'View mempool (pending tx)', value: 'pending' },
-      { name: 'Validate chain integrity', value: 'validate' },
-      { name: 'Chain info / stats', value: 'info' },
-      new inquirer.default.Separator('--- Learn ---'),
+      { name: 'View mempool', value: 'pending' },
+      { name: 'Validate chain', value: 'validate' },
+      { name: 'Chain stats', value: 'info' },
+      new inq.Separator(`${c.dim}--- Learn ---${c.reset}`),
       { name: 'Explain a topic (how Bitcoin works)', value: 'explain' },
-      new inquirer.default.Separator('--- System ---'),
+      new inq.Separator(`${c.dim}--- System ---${c.reset}`),
       { name: 'Clear terminal', value: 'clear' },
       { name: 'Exit', value: 'exit' },
     ],
   }]);
-  return action;
+
+  await runAction(action);
 }
 
-async function menuExplain() {
-  const topics = {
-    'Mining — how proof-of-work works': 'mine',
-    'Wallets — keys, addresses, ownership': 'wallet',
-    'Transactions — signing and verification': 'transaction',
-    'Blocks — structure and hashing': 'block',
-    'The Blockchain — tamper-evidence': 'chain',
-    'Consensus — how the network agrees': 'consensus',
-    'Difficulty — what controls mining speed': 'difficulty',
-    'Block Reward — how new coins are created': 'reward',
-    'Hashing — SHA-256 and why it matters': 'hash',
-    'Genesis Block — where it all started': 'genesis',
-  };
+// ============================================================================
+// ACTION RUNNER — from menu selections
+// ============================================================================
 
-  const { topic } = await inquirer.default.prompt([{
+async function runAction(action) {
+  switch (action) {
+    case 'wallet-create': cmdWalletCreate(); break;
+    case 'wallet-list':   cmdWalletList(); break;
+    case 'wallet-info':   cmdWalletInfo(); break;
+    case 'wallet-switch': await interactiveWalletSwitch(); break;
+    case 'wallet-load':   await interactiveWalletLoad(); break;
+    case 'mine':          cmdMine(); break;
+    case 'balance':       cmdBalance(); break;
+    case 'send':          await interactiveSend(); break;
+    case 'chain':         cmdChain(); break;
+    case 'pending':       cmdPending(); break;
+    case 'validate':      cmdValidate(); break;
+    case 'info':          cmdInfo(); break;
+    case 'explain':       await interactiveExplain(); break;
+    case 'clear':         console.clear(); break;
+    case 'exit':
+      console.log(`\n  ${c.gray}Goodbye. Run ${c.cyan}anvil-chain${c.gray} to start again.${c.reset}\n`);
+      process.exit(0);
+  }
+}
+
+// ============================================================================
+// INTERACTIVE PROMPTS (for menu-triggered actions that need more input)
+// ============================================================================
+
+async function interactiveExplain() {
+  const { topic } = await inq.prompt([{
     type: 'list',
     name: 'topic',
     message: 'What do you want to learn about?',
     pageSize: 12,
-    choices: Object.entries(topics).map(([name, value]) => ({ name, value })),
+    choices: [
+      { name: 'Mining — how proof-of-work works', value: 'mine' },
+      { name: 'Wallets — keys, addresses, ownership', value: 'wallet' },
+      { name: 'Transactions — signing and verification', value: 'transaction' },
+      { name: 'Blocks — structure and hashing', value: 'block' },
+      { name: 'Blockchain — tamper-evidence', value: 'chain' },
+      { name: 'Consensus — how the network agrees', value: 'consensus' },
+      { name: 'Difficulty — what controls mining speed', value: 'difficulty' },
+      { name: 'Block Reward — how new coins are created', value: 'reward' },
+      { name: 'Hashing — SHA-256 and why it matters', value: 'hash' },
+      { name: 'Genesis Block — where it all started', value: 'genesis' },
+    ],
   }]);
-  return topic;
+  cmdExplain(topic);
 }
 
-async function menuWalletSwitch() {
-  if (wallets.length === 0) { err('No wallets. Run /wallet create first.'); return null; }
-  const choices = wallets.map((wl, i) => {
-    const bal = blockchain.getBalance(wl.publicKey);
-    const tag = i === activeIdx ? ' (active)' : '';
-    return { name: `#${i+1}  ${short(wl.publicKey)}  ${bal} ${config.COIN_SYMBOL}${tag}`, value: i };
-  });
+async function interactiveWalletSwitch() {
+  if (wallets.length === 0) { err('No wallets. Run /wallet create first.'); gap(); return; }
 
-  const { idx } = await inquirer.default.prompt([{
+  const { idx } = await inq.prompt([{
     type: 'list',
     name: 'idx',
     message: 'Switch to which wallet?',
-    choices,
+    choices: wallets.map((wl, i) => {
+      const bal = blockchain.getBalance(wl.publicKey);
+      const tag = i === activeIdx ? ' (active)' : '';
+      return { name: `#${i+1}  ${short(wl.publicKey)}  ${bal} ${config.COIN_SYMBOL}${tag}`, value: i };
+    }),
   }]);
-  return idx;
+  cmdWalletSwitch(idx);
 }
 
-async function menuSend() {
-  if (!needW()) return null;
-  const { address, amount } = await inquirer.default.prompt([
+async function interactiveWalletLoad() {
+  const { fp } = await inq.prompt([{
+    type: 'input',
+    name: 'fp',
+    message: 'Path to wallet JSON file:',
+    validate: v => v.trim().length > 0 || 'Path required',
+  }]);
+  cmdWalletLoad(fp.trim());
+}
+
+async function interactiveSend() {
+  if (!needW()) return;
+  const { address, amount } = await inq.prompt([
     {
       type: 'input',
       name: 'address',
       message: 'Recipient address:',
-      validate: v => v.trim().length > 0 ? true : 'Address required',
+      validate: v => v.trim().length > 0 || 'Address required',
     },
     {
       type: 'input',
       name: 'amount',
       message: `Amount (${config.COIN_SYMBOL}):`,
-      validate: v => {
-        const n = parseFloat(v);
-        if (isNaN(n) || n <= 0) return 'Enter a positive number';
-        return true;
-      },
+      validate: v => (!isNaN(parseFloat(v)) && parseFloat(v) > 0) || 'Enter a positive number',
     },
   ]);
-  return { address: address.trim(), amount: parseFloat(amount) };
+  cmdSend(address.trim(), parseFloat(amount));
 }
 
-async function menuWalletLoad() {
-  const { filePath } = await inquirer.default.prompt([{
-    type: 'input',
-    name: 'filePath',
-    message: 'Path to wallet JSON file:',
-    validate: v => v.trim().length > 0 ? true : 'Path required',
-  }]);
-  return filePath.trim();
+// ============================================================================
+// TYPED COMMAND HANDLER — parses /slash commands typed directly
+// ============================================================================
+
+async function handleTyped(raw) {
+  const norm = raw.startsWith('/') ? raw.substring(1) : raw;
+  const parts = norm.split(/\s+/);
+  const cmd = parts[0]?.toLowerCase();
+  const sub_ = parts[1]?.toLowerCase();
+  const rest = parts.slice(2);
+
+  switch (cmd) {
+    case 'help': case 'h': await runMenu(); return;
+    case 'clear': case 'cls': console.clear(); return;
+    case 'exit': case 'quit': case 'q':
+      console.log(`\n  ${c.gray}Goodbye. Run ${c.cyan}anvil-chain${c.gray} to start again.${c.reset}\n`);
+      process.exit(0);
+
+    case 'mine': cmdMine(); return;
+    case 'balance': case 'bal': cmdBalance(); return;
+    case 'chain': cmdChain(); return;
+    case 'pending': case 'mempool': cmdPending(); return;
+    case 'validate': cmdValidate(); return;
+    case 'info': cmdInfo(); return;
+
+    case 'wallet': case 'w':
+      if (sub_ === 'create' || sub_ === 'new') { cmdWalletCreate(); return; }
+      if (sub_ === 'list' || sub_ === 'ls') { cmdWalletList(); return; }
+      if (sub_ === 'info' || sub_ === 'show') { cmdWalletInfo(); return; }
+      if (sub_ === 'switch' || sub_ === 'use') {
+        const n = parseInt(rest[0]);
+        if (!isNaN(n) && n >= 1 && n <= wallets.length) { cmdWalletSwitch(n - 1); return; }
+        await interactiveWalletSwitch(); return;
+      }
+      if (sub_ === 'load') {
+        if (rest[0]) { cmdWalletLoad(rest[0]); return; }
+        await interactiveWalletLoad(); return;
+      }
+      err('Usage: /wallet <create|list|switch|info|load>'); gap(); return;
+
+    case 'send':
+      if (parts[1] && !isNaN(parseFloat(parts[2]))) {
+        cmdSend(parts[1], parseFloat(parts[2])); return;
+      }
+      await interactiveSend(); return;
+
+    case 'explain': case 'ex': case 'learn':
+      if (sub_ && sub_ !== 'list' && EXPLAINS[sub_]) { cmdExplain(sub_); return; }
+      await interactiveExplain(); return;
+
+    default:
+      err(`Unknown command: ${cmd}`);
+      console.log(`  ${c.gray}Type /help or press Enter for the menu.${c.reset}`);
+      gap();
+  }
 }
 
 // ============================================================================
@@ -264,7 +370,6 @@ hash: `
 
   SHA-256: any input -> fixed 64-char hex output.
   Deterministic, one-way, avalanche effect, collision-resistant.
-  Change one bit of input = ~50% of output bits flip.
 
   Both Bitcoin and this sandbox use SHA-256.
 `,
@@ -275,7 +380,6 @@ genesis: `
 
   ${c.cyan}In Bitcoin:${c.reset} Mined Jan 3 2009 by Satoshi Nakamoto.
   Contains: "The Times 03/Jan/2009 Chancellor on brink of second bailout for banks"
-  The 50 BTC reward is unspendable (by design).
 
   ${c.yellow}In this sandbox:${c.reset} "${config.GENESIS_MESSAGE}"
 `,
@@ -327,12 +431,11 @@ function cmdWalletSwitch(idx) {
 
 function cmdWalletInfo() {
   if (!needW()) return;
-  const wl = w();
-  const bal = blockchain.getBalance(wl.publicKey);
+  const wl = aw();
   header(`Wallet #${activeIdx + 1}`);
   row('Short', short(wl.publicKey));
   row('Full Address', wl.publicKey);
-  row('Balance', `${c.bold}${c.green}${bal} ${config.COIN_SYMBOL}${c.reset}`);
+  row('Balance', `${c.bold}${c.green}${blockchain.getBalance(wl.publicKey)} ${config.COIN_SYMBOL}${c.reset}`);
   gap();
 }
 
@@ -350,18 +453,18 @@ function cmdWalletLoad(fp) {
 function cmdBalance() {
   if (!needW()) return;
   header('Balance');
-  row('Wallet', `#${activeIdx+1}  ${short(w().publicKey)}`);
-  row('Balance', `${c.bold}${c.green}${blockchain.getBalance(w().publicKey)} ${config.COIN_SYMBOL}${c.reset}`);
+  row('Wallet', `#${activeIdx+1}  ${short(aw().publicKey)}`);
+  row('Balance', `${c.bold}${c.green}${blockchain.getBalance(aw().publicKey)} ${config.COIN_SYMBOL}${c.reset}`);
   gap();
 }
 
 function cmdSend(address, amount) {
   if (!needW()) return;
   try {
-    const tx = w().createTransaction(address, amount);
+    const tx = aw().createTransaction(address, amount);
     blockchain.addTransaction(tx);
     ok(`Transaction queued: ${amount} ${config.COIN_SYMBOL}`);
-    row('From', short(w().publicKey));
+    row('From', short(aw().publicKey));
     row('To', short(address));
     gap();
     console.log(`  ${c.gray}Waiting to be included in a mined block.${c.reset}`);
@@ -375,7 +478,7 @@ function cmdMine() {
   console.log(`  ${c.gray}Finding a nonce where SHA-256 starts with "${'0'.repeat(blockchain.difficulty)}"...${c.reset}`);
   console.log(`  ${c.gray}(In real Bitcoin this takes ~10 min with specialized hardware)${c.reset}`);
   gap();
-  const block = blockchain.minePendingTransactions(w().publicKey);
+  const block = blockchain.minePendingTransactions(aw().publicKey);
   ok(`Block #${block.index} mined successfully.`);
   gap();
   row('Nonce', block.nonce);
@@ -419,8 +522,7 @@ function cmdValidate() {
   header('Chain Validation');
   console.log(`  ${c.gray}Checking hashes, links, signatures...${c.reset}`);
   gap();
-  const valid = blockchain.isValid();
-  if (valid) ok('Chain is VALID. No tampering detected.');
+  if (blockchain.isValid()) ok('Chain is VALID. No tampering detected.');
   else err('Chain is INVALID.');
   gap();
 }
@@ -449,179 +551,11 @@ function cmdExplain(topic) {
 }
 
 // ============================================================================
-// COMMAND ROUTER — handles both typed commands and menu results
-// ============================================================================
-
-async function handleAction(action) {
-  switch (action) {
-    case 'help':           await runMenu(); return;
-    case 'wallet create':  cmdWalletCreate(); break;
-    case 'wallet list':    cmdWalletList(); break;
-    case 'wallet switch': {
-      const idx = await menuWalletSwitch();
-      if (idx !== null) cmdWalletSwitch(idx);
-      break;
-    }
-    case 'wallet info':    cmdWalletInfo(); break;
-    case 'wallet load': {
-      const fp = await menuWalletLoad();
-      if (fp) cmdWalletLoad(fp);
-      break;
-    }
-    case 'mine':           cmdMine(); break;
-    case 'balance':        cmdBalance(); break;
-    case 'send': {
-      const data = await menuSend();
-      if (data) cmdSend(data.address, data.amount);
-      break;
-    }
-    case 'chain':          cmdChain(); break;
-    case 'pending':        cmdPending(); break;
-    case 'validate':       cmdValidate(); break;
-    case 'info':           cmdInfo(); break;
-    case 'explain': {
-      const topic = await menuExplain();
-      cmdExplain(topic);
-      break;
-    }
-    case 'clear':          console.clear(); break;
-    case 'exit':
-      console.log(`\n  ${c.gray}Goodbye. Run ${c.cyan}anvil-chain${c.gray} to start again.${c.reset}\n`);
-      process.exit(0);
-    default:
-      err(`Unknown: ${action}`);
-      console.log(`  ${c.gray}Type /help for menu. Press Tab for autocomplete.${c.reset}`);
-      gap();
-  }
-}
-
-async function runMenu() {
-  const action = await menuMain();
-  await handleAction(action);
-}
-
-// ============================================================================
-// TYPED INPUT PARSER — maps raw text to actions
-// ============================================================================
-
-function parseInput(raw) {
-  const trimmed = raw.trim();
-  if (!trimmed) return null;
-  const norm = trimmed.startsWith('/') ? trimmed.substring(1) : trimmed;
-  const parts = norm.split(/\s+/);
-  const cmd = parts[0]?.toLowerCase();
-  const sub_ = parts[1]?.toLowerCase();
-  const rest = parts.slice(2);
-
-  // Direct mappings
-  if (cmd === 'help' || cmd === 'h') return { action: 'help' };
-  if (cmd === 'clear' || cmd === 'cls') return { action: 'clear' };
-  if (cmd === 'exit' || cmd === 'quit' || cmd === 'q') return { action: 'exit' };
-  if (cmd === 'mine') return { action: 'mine' };
-  if (cmd === 'balance' || cmd === 'bal') return { action: 'balance' };
-  if (cmd === 'chain') return { action: 'chain' };
-  if (cmd === 'pending' || cmd === 'mempool') return { action: 'pending' };
-  if (cmd === 'validate') return { action: 'validate' };
-  if (cmd === 'info') return { action: 'info' };
-
-  // Wallet subcommands
-  if (cmd === 'wallet' || cmd === 'w') {
-    if (sub_ === 'create' || sub_ === 'new') return { action: 'wallet create' };
-    if (sub_ === 'list' || sub_ === 'ls') return { action: 'wallet list' };
-    if (sub_ === 'info' || sub_ === 'show') return { action: 'wallet info' };
-    if (sub_ === 'switch' || sub_ === 'use') {
-      const num = parseInt(rest[0]);
-      if (!isNaN(num) && num >= 1 && num <= wallets.length)
-        return { action: 'wallet switch direct', idx: num - 1 };
-      return { action: 'wallet switch' }; // open menu
-    }
-    if (sub_ === 'load') {
-      if (rest[0]) return { action: 'wallet load direct', path: rest[0] };
-      return { action: 'wallet load' }; // open menu
-    }
-    return { action: 'wallet unknown' };
-  }
-
-  // Send — can be typed directly or open menu
-  if (cmd === 'send') {
-    const addr = parts[1];
-    const amt = parseFloat(parts[2]);
-    if (addr && !isNaN(amt)) return { action: 'send direct', address: addr, amount: amt };
-    return { action: 'send' }; // open interactive menu
-  }
-
-  // Explain
-  if (cmd === 'explain' || cmd === 'ex' || cmd === 'learn') {
-    if (sub_ && sub_ !== 'list' && EXPLAINS[sub_]) return { action: 'explain direct', topic: sub_ };
-    return { action: 'explain' }; // open menu
-  }
-
-  return { action: cmd };
-}
-
-// ============================================================================
-// MAIN LOOP
-// ============================================================================
-
-const COMMANDS = [
-  '/help','/wallet create','/wallet list','/wallet switch','/wallet info','/wallet load',
-  '/balance','/send','/mine','/chain','/pending','/validate','/info',
-  '/explain','/explain mine','/explain wallet','/explain transaction','/explain block',
-  '/explain chain','/explain consensus','/explain difficulty','/explain reward',
-  '/explain hash','/explain genesis','/clear','/exit',
-];
-
-function completer(line) {
-  const hits = COMMANDS.filter(c => c.startsWith(line));
-  return [hits.length ? hits : COMMANDS, line];
-}
-
-const rl = readline.createInterface({
-  input: process.stdin,
-  output: process.stdout,
-  completer,
-});
-
-async function prompt() {
-  if (rl.closed) return;
-  const wl = w();
-  const tag = wl ? `#${activeIdx+1} ${short(wl.publicKey)}` : 'no wallet';
-  const blocks = blockchain.chain.length;
-  const p = `  ${c.purple}anvil${c.reset} ${c.dim}[${blocks} blocks]${c.reset} ${c.gray}(${tag})${c.reset} ${c.cyan}>${c.reset} `;
-
-  rl.question(p, async (input) => {
-    const parsed = parseInput(input);
-    if (!parsed) { prompt(); return; }
-
-    // Handle direct-data actions without opening menus
-    switch (parsed.action) {
-      case 'wallet switch direct': cmdWalletSwitch(parsed.idx); break;
-      case 'wallet load direct':   cmdWalletLoad(parsed.path); break;
-      case 'send direct':          cmdSend(parsed.address, parsed.amount); break;
-      case 'explain direct':       cmdExplain(parsed.topic); break;
-      case 'wallet unknown':
-        err('Usage: /wallet <create|list|switch|info|load>'); gap(); break;
-      default:
-        // Close readline temporarily so inquirer can take over
-        rl.pause();
-        try { await handleAction(parsed.action); } catch(e) {}
-        rl.resume();
-        break;
-    }
-
-    prompt();
-  });
-}
-
-// ============================================================================
 // STARTUP
 // ============================================================================
 
 async function main() {
-  // Load inquirer (ESM module)
-  inquirer = await import('inquirer');
-
-  rl.on('close', () => process.exit(0));
+  inq = (await import('inquirer')).default;
 
   console.log('');
   console.log(`  ${c.dim}${'='.repeat(58)}${c.reset}`);
@@ -636,10 +570,9 @@ async function main() {
   console.log(`  ${c.gray}A sandbox recreation of Bitcoin's core mechanics.${c.reset}`);
   console.log(`  ${c.gray}Not real cryptocurrency. Built for learning.${c.reset}`);
   console.log('');
-  console.log(`  ${c.gray}Command:      ${c.bold}${c.cyan}anvil-chain${c.reset}`);
-  console.log(`  ${c.gray}Menu:         ${c.cyan}/help${c.gray}  (arrow keys to pick)${c.reset}`);
-  console.log(`  ${c.gray}Autocomplete: ${c.cyan}Tab${c.reset}`);
-  console.log(`  ${c.gray}Type freely:  ${c.cyan}/mine${c.gray}, ${c.cyan}/balance${c.gray}, ${c.cyan}/send${c.gray}, etc.${c.reset}`);
+  console.log(`  ${c.gray}Command:  ${c.bold}${c.cyan}anvil-chain${c.reset}`);
+  console.log(`  ${c.gray}Menu:     Press ${c.cyan}Enter${c.gray} or type ${c.cyan}/help${c.reset}`);
+  console.log(`  ${c.gray}Type:     ${c.cyan}/mine${c.gray}, ${c.cyan}/balance${c.gray}, ${c.cyan}/explain mine${c.gray}, etc.${c.reset}`);
   console.log(`  ${c.dim}${'='.repeat(58)}${c.reset}`);
   console.log('');
 

@@ -3,6 +3,9 @@
 // ============================================================================
 // Anvil Chain CLI
 // ============================================================================
+// Type commands freely OR use interactive menus.
+// /help opens an arrow-key menu. You can also type /mine directly.
+// ============================================================================
 
 const readline = require('readline');
 const path = require('path');
@@ -13,38 +16,15 @@ const config = require('../../config');
 
 // --- State ---
 const blockchain = new Blockchain();
-const wallets = [];       // all created/loaded wallets
-let activeIdx = -1;       // index into wallets[]
-let cmdHistory = [];
-let historyIdx = -1;
+const wallets = [];
+let activeIdx = -1;
+function w() { return activeIdx >= 0 ? wallets[activeIdx] : null; }
 
-function activeWallet() { return activeIdx >= 0 ? wallets[activeIdx] : null; }
-
-// --- Readline with tab completion ---
-const COMMANDS = [
-  '/help', '/wallet create', '/wallet list', '/wallet switch',
-  '/wallet info', '/wallet load', '/balance', '/send',
-  '/mine', '/chain', '/pending', '/validate', '/info',
-  '/explain mine', '/explain wallet', '/explain transaction',
-  '/explain block', '/explain chain', '/explain consensus',
-  '/explain difficulty', '/explain reward', '/explain hash',
-  '/explain genesis', '/explain list',
-  '/clear', '/exit',
-];
-
-function completer(line) {
-  const hits = COMMANDS.filter(c => c.startsWith(line));
-  return [hits.length ? hits : COMMANDS, line];
-}
-
-const rl = readline.createInterface({
-  input: process.stdin,
-  output: process.stdout,
-  completer,
-});
+// inquirer loaded async (it's ESM)
+let inquirer = null;
 
 // ============================================================================
-// UI Helpers
+// UI
 // ============================================================================
 const c = {
   reset:'\x1b[0m', bold:'\x1b[1m', dim:'\x1b[2m',
@@ -52,36 +32,134 @@ const c = {
   yellow:'\x1b[33m', red:'\x1b[31m', gray:'\x1b[90m', white:'\x1b[37m',
 };
 
-function ln(ch='-', len=58) { return c.dim + ch.repeat(len) + c.reset; }
-function header(t) {
-  console.log('');
-  console.log(`  ${ln()}`);
-  console.log(`  ${c.bold}${c.purple}${t}${c.reset}`);
-  console.log(`  ${ln()}`);
-}
-function sub(t) {
-  console.log(`\n  ${c.cyan}${c.bold}${t}${c.reset}`);
-}
-function row(l, v) { console.log(`  ${c.gray}${l}:${c.reset} ${v}`); }
-function ok(m)   { console.log(`\n  ${c.green}${m}${c.reset}`); }
-function warn(m) { console.log(`\n  ${c.yellow}${m}${c.reset}`); }
-function err(m)  { console.log(`\n  ${c.red}${m}${c.reset}`); }
-function gap()   { console.log(''); }
+function ln(ch='-',len=58){return c.dim+ch.repeat(len)+c.reset}
+function header(t){console.log('\n  '+ln()+'\n  '+c.bold+c.purple+t+c.reset+'\n  '+ln())}
+function sub(t){console.log('\n  '+c.cyan+c.bold+t+c.reset)}
+function row(l,v){console.log('  '+c.gray+l+':'+c.reset+' '+v)}
+function ok(m){console.log('\n  '+c.green+m+c.reset)}
+function warn(m){console.log('\n  '+c.yellow+m+c.reset)}
+function err(m){console.log('\n  '+c.red+m+c.reset)}
+function gap(){console.log('')}
 
-function shortAddr(a) {
+function short(a) {
   if (!a) return 'none';
   if (a.length <= 20) return a;
-  // Skip the Ed25519 DER prefix (first 24 hex chars are always the same)
-  const unique = a.length > 24 ? a.substring(24) : a;
-  return unique.substring(0, 12) + '...';
+  const u = a.length > 24 ? a.substring(24) : a;
+  return u.substring(0, 12) + '...';
 }
 
-function needWallet() {
-  if (!activeWallet()) {
-    err('No wallet active. Run /wallet create first.');
-    return false;
-  }
+function needW() {
+  if (!w()) { err('No wallet active. Run /wallet create first.'); return false; }
   return true;
+}
+
+// ============================================================================
+// INTERACTIVE MENUS (inquirer)
+// ============================================================================
+
+async function menuMain() {
+  const { action } = await inquirer.default.prompt([{
+    type: 'list',
+    name: 'action',
+    message: 'What do you want to do?',
+    pageSize: 15,
+    choices: [
+      new inquirer.default.Separator('--- Wallet ---'),
+      { name: 'Create a new wallet', value: 'wallet create' },
+      { name: 'List all wallets', value: 'wallet list' },
+      { name: 'Switch active wallet', value: 'wallet switch' },
+      { name: 'Wallet info + full address', value: 'wallet info' },
+      { name: 'Load wallet from file', value: 'wallet load' },
+      new inquirer.default.Separator('--- Blockchain ---'),
+      { name: 'Mine a block', value: 'mine' },
+      { name: 'Check balance', value: 'balance' },
+      { name: 'Send coins', value: 'send' },
+      { name: 'View the chain', value: 'chain' },
+      { name: 'View mempool (pending tx)', value: 'pending' },
+      { name: 'Validate chain integrity', value: 'validate' },
+      { name: 'Chain info / stats', value: 'info' },
+      new inquirer.default.Separator('--- Learn ---'),
+      { name: 'Explain a topic (how Bitcoin works)', value: 'explain' },
+      new inquirer.default.Separator('--- System ---'),
+      { name: 'Clear terminal', value: 'clear' },
+      { name: 'Exit', value: 'exit' },
+    ],
+  }]);
+  return action;
+}
+
+async function menuExplain() {
+  const topics = {
+    'Mining — how proof-of-work works': 'mine',
+    'Wallets — keys, addresses, ownership': 'wallet',
+    'Transactions — signing and verification': 'transaction',
+    'Blocks — structure and hashing': 'block',
+    'The Blockchain — tamper-evidence': 'chain',
+    'Consensus — how the network agrees': 'consensus',
+    'Difficulty — what controls mining speed': 'difficulty',
+    'Block Reward — how new coins are created': 'reward',
+    'Hashing — SHA-256 and why it matters': 'hash',
+    'Genesis Block — where it all started': 'genesis',
+  };
+
+  const { topic } = await inquirer.default.prompt([{
+    type: 'list',
+    name: 'topic',
+    message: 'What do you want to learn about?',
+    pageSize: 12,
+    choices: Object.entries(topics).map(([name, value]) => ({ name, value })),
+  }]);
+  return topic;
+}
+
+async function menuWalletSwitch() {
+  if (wallets.length === 0) { err('No wallets. Run /wallet create first.'); return null; }
+  const choices = wallets.map((wl, i) => {
+    const bal = blockchain.getBalance(wl.publicKey);
+    const tag = i === activeIdx ? ' (active)' : '';
+    return { name: `#${i+1}  ${short(wl.publicKey)}  ${bal} ${config.COIN_SYMBOL}${tag}`, value: i };
+  });
+
+  const { idx } = await inquirer.default.prompt([{
+    type: 'list',
+    name: 'idx',
+    message: 'Switch to which wallet?',
+    choices,
+  }]);
+  return idx;
+}
+
+async function menuSend() {
+  if (!needW()) return null;
+  const { address, amount } = await inquirer.default.prompt([
+    {
+      type: 'input',
+      name: 'address',
+      message: 'Recipient address:',
+      validate: v => v.trim().length > 0 ? true : 'Address required',
+    },
+    {
+      type: 'input',
+      name: 'amount',
+      message: `Amount (${config.COIN_SYMBOL}):`,
+      validate: v => {
+        const n = parseFloat(v);
+        if (isNaN(n) || n <= 0) return 'Enter a positive number';
+        return true;
+      },
+    },
+  ]);
+  return { address: address.trim(), amount: parseFloat(amount) };
+}
+
+async function menuWalletLoad() {
+  const { filePath } = await inquirer.default.prompt([{
+    type: 'input',
+    name: 'filePath',
+    message: 'Path to wallet JSON file:',
+    validate: v => v.trim().length > 0 ? true : 'Path required',
+  }]);
+  return filePath.trim();
 }
 
 // ============================================================================
@@ -92,383 +170,212 @@ const EXPLAINS = {
 mine: `
   ${c.bold}${c.white}What is mining?${c.reset}
 
-  Mining is the process of adding new blocks to the blockchain:
+  Mining adds new blocks to the blockchain:
 
-    1. Collect pending transactions from the network
+    1. Collect pending transactions
     2. Bundle them into a candidate block
-    3. Hash the block data with different nonce values
+    3. Hash with different nonce values
     4. Keep going until the hash starts with enough zeros
 
-  This is ${c.bold}proof-of-work${c.reset}. The difficulty controls how many zeros.
+  This is ${c.bold}proof-of-work${c.reset}.
 
   ${c.cyan}In Bitcoin:${c.reset}
     - Requires ASIC hardware ($5K-$15K per unit)
-    - A single block takes ~10 minutes for the entire network
-    - Miners compete globally — only the first valid hash wins
-    - Difficulty adjusts every 2016 blocks to keep 10-min spacing
+    - ~10 minutes per block for the entire network
+    - Miners compete globally — first valid hash wins
+    - Difficulty adjusts every 2016 blocks
     - Current reward: 3.125 BTC (~$200K+ per block)
-    - Miners also collect transaction fees
 
   ${c.yellow}In this sandbox:${c.reset}
-    - Takes ~1 second on a regular laptop
-    - You're the only miner — no competition
-    - Difficulty is fixed at ${config.MINING_DIFFICULTY}
-    - Same SHA-256 algorithm, just much easier
+    - ~1 second on a laptop. Same SHA-256, just easier.
+    - Difficulty fixed at ${config.MINING_DIFFICULTY}
 `,
-
 wallet: `
   ${c.bold}${c.white}What is a wallet?${c.reset}
 
-  A wallet is a cryptographic key pair:
-
-    ${c.green}Public key${c.reset}  = your address. Share it freely.
+    ${c.green}Public key${c.reset}  = your address. Share freely.
     ${c.red}Private key${c.reset} = your secret. Signs transactions. NEVER share.
 
-  If you lose the private key, those coins are gone forever.
+  Lose the private key = lose the coins forever.
 
-  ${c.cyan}In Bitcoin:${c.reset}
-    - Uses ECDSA (secp256k1) for signatures
-    - Addresses: pubkey -> SHA256 -> RIPEMD160 -> Base58Check
-    - Looks like: 1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa
-    - Hardware wallets (Ledger, Trezor) keep keys offline
-
-  ${c.yellow}In this sandbox:${c.reset}
-    - Uses Ed25519 (modern, same principle)
-    - Address is the full public key hex
-    - Keys saved as plain JSON (real wallets encrypt them)
+  ${c.cyan}In Bitcoin:${c.reset} ECDSA (secp256k1), Base58Check addresses
+  ${c.yellow}In this sandbox:${c.reset} Ed25519, raw hex keys, plain JSON storage
 `,
-
 transaction: `
   ${c.bold}${c.white}What is a transaction?${c.reset}
 
   A signed instruction: "I authorize sending X coins to Y."
-  The sender signs with their private key. Anyone can verify
-  using the sender's public key.
 
-  ${c.cyan}In Bitcoin:${c.reset}
-    - UTXO model (Unspent Transaction Outputs)
-    - Each tx consumes previous outputs, creates new ones
-    - Change sent back to yourself as a new output
-    - Fees = sum(inputs) - sum(outputs)
-    - Script system (OP_CODES) for spending conditions
-
-  ${c.yellow}In this sandbox:${c.reset}
-    - Account/balance model (simpler, like Ethereum)
-    - No UTXO, no change outputs, no script, no fees
+  ${c.cyan}In Bitcoin:${c.reset} UTXO model, Script system, transaction fees
+  ${c.yellow}In this sandbox:${c.reset} Account balances, no fees, no Script
 `,
-
 block: `
   ${c.bold}${c.white}What is a block?${c.reset}
 
-  A container bundling transactions with metadata:
+  A container: transactions + index + timestamp + previousHash + nonce + hash.
+  Each block stores the hash of the previous one — that's the "chain."
 
-    ${c.cyan}index${c.reset}         position in the chain
-    ${c.cyan}timestamp${c.reset}     when created
-    ${c.cyan}transactions${c.reset}  the batch of tx in this block
-    ${c.cyan}previousHash${c.reset}  hash of the block before this one
-    ${c.cyan}nonce${c.reset}         number found during mining
-    ${c.cyan}hash${c.reset}          SHA-256 of all above fields
-
-  ${c.cyan}In Bitcoin:${c.reset}
-    - 80-byte header + Merkle root of all transactions
-    - ~2000-3000 tx per block, every ~10 minutes
-    - Block weight limit: ~4MB
-
-  ${c.yellow}In this sandbox:${c.reset}
-    - Flat transaction array (no Merkle tree)
-    - Max ${config.MAX_TRANSACTIONS_PER_BLOCK} tx per block
+  ${c.cyan}In Bitcoin:${c.reset} 80-byte header, Merkle root, ~2000-3000 tx, ~10 min
+  ${c.yellow}In this sandbox:${c.reset} Flat array, max ${config.MAX_TRANSACTIONS_PER_BLOCK} tx per block
 `,
-
 chain: `
   ${c.bold}${c.white}What is the blockchain?${c.reset}
 
-  A linked list of blocks. Each block stores the hash of the
-  previous block. Change any block and everything after it breaks.
+  A linked list of blocks. Change any block and everything after it breaks.
+  Rewriting history requires re-mining everything — the 51% attack problem.
 
-  To rewrite history, an attacker must re-mine every block from
-  the tampered one to the tip — faster than honest miners.
-  This is the ${c.bold}51% attack${c.reset} problem.
-
-  ${c.cyan}In Bitcoin:${c.reset}
-    - Started January 3, 2009. Now 800,000+ blocks.
-    - Full chain: ~600GB+
-    - Every full node stores the entire thing
-
-  ${c.yellow}In this sandbox:${c.reset}
-    - In-memory only (lost when you exit)
+  ${c.cyan}In Bitcoin:${c.reset} 800,000+ blocks, ~600GB, started Jan 3 2009
+  ${c.yellow}In this sandbox:${c.reset} In-memory only (lost when you exit)
 `,
-
 consensus: `
   ${c.bold}${c.white}What is Nakamoto consensus?${c.reset}
 
-  How a decentralized network agrees without a central authority:
+  1. Anyone can propose a block by mining it
+  2. Nodes accept the longest valid chain
+  3. Forks resolve when one chain gets ahead
+  Requires >50% of hash power to attack.
 
-    1. Anyone can propose a block by mining it
-    2. Nodes accept the longest valid chain
-    3. Forks resolve when one chain gets ahead
-
-  Requires >50% of hash power to attack (infeasible for Bitcoin).
-
-  ${c.cyan}In Bitcoin:${c.reset} ~20,000 nodes worldwide, P2P gossip protocol
-  ${c.yellow}In this sandbox:${c.reset} local HTTP nodes, same longest-chain rule
+  ${c.cyan}In Bitcoin:${c.reset} ~20,000 nodes, P2P gossip protocol
+  ${c.yellow}In this sandbox:${c.reset} Local HTTP nodes, same longest-chain rule
 `,
-
 difficulty: `
   ${c.bold}${c.white}What is mining difficulty?${c.reset}
 
-  The hash must start with N zeros:
+  Hash must start with N zeros:
+    Difficulty 1: instant  |  3: ~1s  |  5: ~minutes
+    Bitcoin: ~19 hex zeros for 600 EH/s network
 
-    Difficulty 1:  "0..."       (instant)
-    Difficulty 3:  "000..."     (~1 second)
-    Difficulty 5:  "00000..."   (~minutes)
-    Bitcoin now:   ~19 hex zeros (~10 min for 600 EH/s network)
-
-  ${c.cyan}In Bitcoin:${c.reset} adjusts every 2016 blocks to keep ~10 min
-  ${c.yellow}In this sandbox:${c.reset} fixed at ${config.MINING_DIFFICULTY}
+  ${c.cyan}In Bitcoin:${c.reset} Adjusts every 2016 blocks
+  ${c.yellow}In this sandbox:${c.reset} Fixed at ${config.MINING_DIFFICULTY}
 `,
-
 reward: `
   ${c.bold}${c.white}What is the block reward?${c.reset}
 
-  New coins created for the miner — the "coinbase transaction."
+  New coins for the miner — the "coinbase transaction."
   The ONLY way new coins enter circulation.
 
-  ${c.cyan}In Bitcoin:${c.reset}
-    Started at 50 BTC (2009). Halves every 210,000 blocks:
-    50 -> 25 -> 12.5 -> 6.25 -> 3.125 BTC (current)
-    Total supply capped at 21,000,000 BTC. Runs out ~2140.
+  ${c.cyan}In Bitcoin:${c.reset} 50 -> 25 -> 12.5 -> 6.25 -> 3.125 BTC (halves every ~4 years)
+  Total cap: 21,000,000 BTC. Runs out ~2140.
 
-  ${c.yellow}In this sandbox:${c.reset}
-    Fixed ${config.BLOCK_REWARD} ${config.COIN_SYMBOL} per block. No halving, no cap.
+  ${c.yellow}In this sandbox:${c.reset} Fixed ${config.BLOCK_REWARD} ${config.COIN_SYMBOL}. No halving, no cap.
 `,
-
 hash: `
   ${c.bold}${c.white}What is a hash?${c.reset}
 
-  SHA-256 takes any input -> fixed 64-char hex output.
+  SHA-256: any input -> fixed 64-char hex output.
+  Deterministic, one-way, avalanche effect, collision-resistant.
+  Change one bit of input = ~50% of output bits flip.
 
-    ${c.green}Deterministic${c.reset}     same input = same output
-    ${c.green}One-way${c.reset}           can't reverse it
-    ${c.green}Avalanche effect${c.reset}  tiny change = totally different hash
-    ${c.green}Collision-resistant${c.reset} near-impossible to find two matching inputs
-
-  Bitcoin uses SHA-256 (double-hashed). This sandbox uses SHA-256 (single).
+  Both Bitcoin and this sandbox use SHA-256.
 `,
-
 genesis: `
   ${c.bold}${c.white}What is the genesis block?${c.reset}
 
   Block #0. No predecessor. Every blockchain starts here.
 
-  ${c.cyan}In Bitcoin:${c.reset}
-    Mined by Satoshi Nakamoto on January 3, 2009.
-    Contains: "The Times 03/Jan/2009 Chancellor on brink of
-    second bailout for banks"
-    The 50 BTC reward is unspendable (by design).
+  ${c.cyan}In Bitcoin:${c.reset} Mined Jan 3 2009 by Satoshi Nakamoto.
+  Contains: "The Times 03/Jan/2009 Chancellor on brink of second bailout for banks"
+  The 50 BTC reward is unspendable (by design).
 
-  ${c.yellow}In this sandbox:${c.reset}
-    Genesis message: "${config.GENESIS_MESSAGE}"
+  ${c.yellow}In this sandbox:${c.reset} "${config.GENESIS_MESSAGE}"
 `,
 };
 
 // ============================================================================
-// COMMANDS
+// COMMAND IMPLEMENTATIONS
 // ============================================================================
 
-function cmdHelp() {
-  header(`${config.COIN_NAME} CLI`);
-  console.log(`  ${c.dim}A sandbox recreation of Bitcoin. Type a command or press Tab.${c.reset}`);
-
-  sub('Wallet');
-  console.log(`  ${c.cyan}/wallet create${c.reset}          Create a new wallet`);
-  console.log(`  ${c.cyan}/wallet list${c.reset}            List all wallets`);
-  console.log(`  ${c.cyan}/wallet switch ${c.gray}<#>${c.reset}      Switch active wallet`);
-  console.log(`  ${c.cyan}/wallet info${c.reset}            Current wallet details + full address`);
-  console.log(`  ${c.cyan}/wallet load ${c.gray}<file>${c.reset}     Load from file`);
-
-  sub('Blockchain');
-  console.log(`  ${c.cyan}/balance${c.reset}                Check your balance`);
-  console.log(`  ${c.cyan}/send ${c.gray}<addr> <amt>${c.reset}     Send ${config.COIN_SYMBOL}`);
-  console.log(`  ${c.cyan}/mine${c.reset}                   Mine the next block`);
-  console.log(`  ${c.cyan}/chain${c.reset}                  View the blockchain`);
-  console.log(`  ${c.cyan}/pending${c.reset}                View mempool`);
-  console.log(`  ${c.cyan}/validate${c.reset}               Validate chain integrity`);
-  console.log(`  ${c.cyan}/info${c.reset}                   Chain statistics`);
-
-  sub('Learn');
-  console.log(`  ${c.cyan}/explain ${c.gray}<topic>${c.reset}        How Bitcoin does it vs this sandbox`);
-  console.log(`  ${c.cyan}/explain list${c.reset}            All available topics`);
-
-  sub('System');
-  console.log(`  ${c.cyan}/clear${c.reset}                  Clear terminal`);
-  console.log(`  ${c.cyan}/exit${c.reset}                   Quit`);
-  gap();
-}
-
-function cmdExplain(args) {
-  const topic = args[0]?.toLowerCase();
-  if (!topic || topic === 'list') {
-    header('Explain Topics');
-    console.log(`  ${c.gray}Type /explain <topic> to learn how it works in Bitcoin.${c.reset}`);
-    gap();
-    for (const t of Object.keys(EXPLAINS)) {
-      console.log(`    ${c.cyan}/explain ${t}${c.reset}`);
-    }
-    gap();
-    return;
-  }
-  if (EXPLAINS[topic]) {
-    console.log(EXPLAINS[topic]);
-  } else {
-    err(`Unknown topic: ${topic}`);
-    console.log(`  ${c.gray}Available: ${Object.keys(EXPLAINS).join(', ')}${c.reset}`);
-    gap();
-  }
-}
-
-// --- Wallet commands ---
-
 function cmdWalletCreate() {
-  const w = Wallet.create();
-  const walletsDir = path.join(process.cwd(), 'wallets');
-  const filePath = path.join(walletsDir, `wallet-${Date.now()}.json`);
-  w.save(filePath);
-
-  wallets.push(w);
+  const wl = Wallet.create();
+  const dir = path.join(process.cwd(), 'wallets');
+  const fp = path.join(dir, `wallet-${Date.now()}.json`);
+  wl.save(fp);
+  wallets.push(wl);
   activeIdx = wallets.length - 1;
 
   header('Wallet Created');
   row('Wallet #', activeIdx + 1);
-  row('Short', shortAddr(w.publicKey));
-  row('Full Address', w.publicKey);
-  row('Saved', filePath);
+  row('Short', short(wl.publicKey));
+  row('Full Address', wl.publicKey);
+  row('Saved', fp);
   gap();
   console.log(`  ${c.yellow}Your private key is in that file. Never share it.${c.reset}`);
-  console.log(`  ${c.gray}Tip: /explain wallet${c.reset}`);
   gap();
 }
 
 function cmdWalletList() {
   header(`Wallets (${wallets.length})`);
-
-  if (wallets.length === 0) {
-    console.log(`  ${c.gray}No wallets yet. Run /wallet create${c.reset}`);
-    gap();
-    return;
-  }
-
+  if (wallets.length === 0) { console.log(`  ${c.gray}No wallets yet.${c.reset}`); gap(); return; }
   for (let i = 0; i < wallets.length; i++) {
-    const w = wallets[i];
-    const bal = blockchain.getBalance(w.publicKey);
-    const active = i === activeIdx ? `${c.green} *active*${c.reset}` : '';
-    const num = `${c.bold}#${i + 1}${c.reset}`;
-    console.log(`\n  ${num}  ${shortAddr(w.publicKey)}  ${c.green}${bal} ${config.COIN_SYMBOL}${c.reset}${active}`);
-    console.log(`       ${c.dim}${w.publicKey}${c.reset}`);
+    const wl = wallets[i];
+    const bal = blockchain.getBalance(wl.publicKey);
+    const tag = i === activeIdx ? `${c.green} *active*${c.reset}` : '';
+    console.log(`\n  ${c.bold}#${i+1}${c.reset}  ${short(wl.publicKey)}  ${c.green}${bal} ${config.COIN_SYMBOL}${c.reset}${tag}`);
+    console.log(`       ${c.dim}${wl.publicKey}${c.reset}`);
   }
   gap();
-  if (wallets.length > 1) {
-    console.log(`  ${c.gray}Switch with: /wallet switch <number>${c.reset}`);
-    gap();
-  }
 }
 
-function cmdWalletSwitch(args) {
-  const num = parseInt(args[0]);
-  if (isNaN(num) || num < 1 || num > wallets.length) {
-    err(`Usage: /wallet switch <1-${wallets.length}>`);
-    if (wallets.length === 0) console.log(`  ${c.gray}No wallets. Run /wallet create first.${c.reset}`);
-    gap();
-    return;
-  }
-  activeIdx = num - 1;
-  const w = wallets[activeIdx];
-  ok(`Switched to wallet #${num}`);
-  row('Address', shortAddr(w.publicKey));
-  row('Balance', `${blockchain.getBalance(w.publicKey)} ${config.COIN_SYMBOL}`);
+function cmdWalletSwitch(idx) {
+  activeIdx = idx;
+  const wl = wallets[activeIdx];
+  ok(`Switched to wallet #${idx + 1}`);
+  row('Address', short(wl.publicKey));
+  row('Balance', `${blockchain.getBalance(wl.publicKey)} ${config.COIN_SYMBOL}`);
   gap();
 }
 
 function cmdWalletInfo() {
-  if (!needWallet()) return;
-  const w = activeWallet();
-  const bal = blockchain.getBalance(w.publicKey);
-
+  if (!needW()) return;
+  const wl = w();
+  const bal = blockchain.getBalance(wl.publicKey);
   header(`Wallet #${activeIdx + 1}`);
-  row('Short', shortAddr(w.publicKey));
-  row('Full Address', w.publicKey);
+  row('Short', short(wl.publicKey));
+  row('Full Address', wl.publicKey);
   row('Balance', `${c.bold}${c.green}${bal} ${config.COIN_SYMBOL}${c.reset}`);
-  gap();
-  console.log(`  ${c.gray}Tip: /explain wallet${c.reset}`);
   gap();
 }
 
-function cmdWalletLoad(args) {
-  if (!args[0]) {
-    err('Usage: /wallet load <path-to-wallet.json>');
-    gap();
-    return;
-  }
+function cmdWalletLoad(fp) {
   try {
-    const w = Wallet.load(args[0]);
-    wallets.push(w);
+    const wl = Wallet.load(fp);
+    wallets.push(wl);
     activeIdx = wallets.length - 1;
     ok(`Wallet loaded as #${wallets.length}`);
-    row('Address', shortAddr(w.publicKey));
+    row('Address', short(wl.publicKey));
     gap();
   } catch (e) { err(e.message); gap(); }
 }
 
-// --- Core commands ---
-
 function cmdBalance() {
-  if (!needWallet()) return;
-  const w = activeWallet();
-  const bal = blockchain.getBalance(w.publicKey);
-
+  if (!needW()) return;
   header('Balance');
-  row('Wallet', `#${activeIdx + 1}  ${shortAddr(w.publicKey)}`);
-  row('Balance', `${c.bold}${c.green}${bal} ${config.COIN_SYMBOL}${c.reset}`);
+  row('Wallet', `#${activeIdx+1}  ${short(w().publicKey)}`);
+  row('Balance', `${c.bold}${c.green}${blockchain.getBalance(w().publicKey)} ${config.COIN_SYMBOL}${c.reset}`);
   gap();
 }
 
-function cmdSend(args) {
-  if (!needWallet()) return;
-  const w = activeWallet();
-  const receiver = args[0];
-  const amount = parseFloat(args[1]);
-
-  if (!receiver || isNaN(amount)) {
-    err('Usage: /send <address> <amount>');
-    gap();
-    console.log(`  ${c.gray}Example: /send ${c.dim}302a300506032b6570...${c.gray} 10${c.reset}`);
-    gap();
-    return;
-  }
-
+function cmdSend(address, amount) {
+  if (!needW()) return;
   try {
-    const tx = w.createTransaction(receiver, amount);
+    const tx = w().createTransaction(address, amount);
     blockchain.addTransaction(tx);
     ok(`Transaction queued: ${amount} ${config.COIN_SYMBOL}`);
-    row('From', shortAddr(w.publicKey));
-    row('To', shortAddr(receiver));
+    row('From', short(w().publicKey));
+    row('To', short(address));
     gap();
     console.log(`  ${c.gray}Waiting to be included in a mined block.${c.reset}`);
-    console.log(`  ${c.gray}Tip: /explain transaction${c.reset}`);
     gap();
   } catch (e) { err(e.message); gap(); }
 }
 
 function cmdMine() {
-  if (!needWallet()) return;
-  const w = activeWallet();
-
+  if (!needW()) return;
   header('Mining');
   console.log(`  ${c.gray}Finding a nonce where SHA-256 starts with "${'0'.repeat(blockchain.difficulty)}"...${c.reset}`);
   console.log(`  ${c.gray}(In real Bitcoin this takes ~10 min with specialized hardware)${c.reset}`);
   gap();
-
-  const block = blockchain.minePendingTransactions(w.publicKey);
-
+  const block = blockchain.minePendingTransactions(w().publicKey);
   ok(`Block #${block.index} mined successfully.`);
   gap();
   row('Nonce', block.nonce);
@@ -476,31 +383,21 @@ function cmdMine() {
   row('Transactions', block.transactions.length);
   row('Reward', `+${config.BLOCK_REWARD} ${config.COIN_SYMBOL} (coinbase)`);
   gap();
-  console.log(`  ${c.gray}Tip: /explain mine${c.reset}`);
-  gap();
 }
 
 function cmdPending() {
-  const pending = blockchain.pendingTransactions;
-  header(`Mempool (${pending.length} pending)`);
-
-  if (pending.length === 0) {
-    console.log(`  ${c.gray}Empty. No transactions waiting to be mined.${c.reset}`);
-    console.log(`  ${c.gray}(In Bitcoin the mempool has thousands of unconfirmed tx.)${c.reset}`);
-    gap();
-    return;
-  }
-
-  for (const tx of pending) {
-    const sender = tx.sender === 'MINING_REWARD' ? 'COINBASE' : shortAddr(tx.sender);
-    console.log(`  ${sender}  ->  ${shortAddr(tx.receiver)}  ${c.green}${tx.amount} ${config.COIN_SYMBOL}${c.reset}`);
+  const p = blockchain.pendingTransactions;
+  header(`Mempool (${p.length} pending)`);
+  if (!p.length) { console.log(`  ${c.gray}Empty.${c.reset}`); gap(); return; }
+  for (const tx of p) {
+    const s = tx.sender === 'MINING_REWARD' ? 'COINBASE' : short(tx.sender);
+    console.log(`  ${s}  ->  ${short(tx.receiver)}  ${c.green}${tx.amount} ${config.COIN_SYMBOL}${c.reset}`);
   }
   gap();
 }
 
 function cmdChain() {
   header(`${config.COIN_NAME} Chain (${blockchain.chain.length} blocks)`);
-
   for (const block of blockchain.chain) {
     console.log(`\n  ${c.bold}${c.purple}Block #${block.index}${c.reset}`);
     console.log(`  ${ln('~', 40)}`);
@@ -509,10 +406,9 @@ function cmdChain() {
     row('  Nonce', block.nonce);
     row('  Hash', block.hash);
     row('  Prev Hash', block.previousHash);
-
     for (const tx of block.transactions) {
-      const s = tx.sender === 'MINING_REWARD' ? `${c.yellow}COINBASE${c.reset}` : shortAddr(tx.sender);
-      console.log(`\n    ${s}  ->  ${shortAddr(tx.receiver)}`);
+      const s = tx.sender === 'MINING_REWARD' ? `${c.yellow}COINBASE${c.reset}` : short(tx.sender);
+      console.log(`\n    ${s}  ->  ${short(tx.receiver)}`);
       console.log(`    ${c.green}${tx.amount} ${config.COIN_SYMBOL}${c.reset}`);
     }
   }
@@ -521,12 +417,11 @@ function cmdChain() {
 
 function cmdValidate() {
   header('Chain Validation');
-  console.log(`  ${c.gray}Checking hashes, links, and signatures...${c.reset}`);
+  console.log(`  ${c.gray}Checking hashes, links, signatures...${c.reset}`);
   gap();
-
   const valid = blockchain.isValid();
   if (valid) ok('Chain is VALID. No tampering detected.');
-  else err('Chain is INVALID. Data has been tampered with.');
+  else err('Chain is INVALID.');
   gap();
 }
 
@@ -548,88 +443,172 @@ function cmdInfo() {
   gap();
 }
 
-// ============================================================================
-// ROUTER
-// ============================================================================
-
-function handleInput(input) {
-  const trimmed = input.trim();
-  if (!trimmed) return;
-
-  const normalized = trimmed.startsWith('/') ? trimmed.substring(1) : trimmed;
-  const parts = normalized.split(/\s+/);
-  const cmd = parts[0]?.toLowerCase();
-  const sub_ = parts[1]?.toLowerCase();
-  const args = parts.slice(1);
-  const subArgs = parts.slice(2);
-
-  switch (cmd) {
-    case 'help': case 'h':
-      cmdHelp(); break;
-
-    case 'clear': case 'cls':
-      console.clear(); break;
-
-    case 'exit': case 'quit': case 'q':
-      console.log(`\n  ${c.gray}Goodbye. Run ${c.cyan}anvil-chain${c.gray} to start again.${c.reset}\n`);
-      rl.close(); process.exit(0); break;
-
-    case 'explain': case 'ex': case 'learn':
-      cmdExplain(args); break;
-
-    case 'wallet': case 'w':
-      if (sub_ === 'create' || sub_ === 'new') cmdWalletCreate();
-      else if (sub_ === 'list' || sub_ === 'ls') cmdWalletList();
-      else if (sub_ === 'switch' || sub_ === 'use') cmdWalletSwitch(subArgs);
-      else if (sub_ === 'info' || sub_ === 'show') cmdWalletInfo();
-      else if (sub_ === 'load') cmdWalletLoad(subArgs);
-      else {
-        err('Usage: /wallet <create|list|switch|info|load>');
-        gap();
-      }
-      break;
-
-    case 'balance': case 'bal':
-      cmdBalance(); break;
-
-    case 'send':
-      cmdSend(args); break;
-
-    case 'mine':
-      cmdMine(); break;
-
-    case 'pending': case 'mempool':
-      cmdPending(); break;
-
-    case 'chain':
-      cmdChain(); break;
-
-    case 'validate':
-      cmdValidate(); break;
-
-    case 'info':
-      cmdInfo(); break;
-
-    default:
-      err(`Unknown command: ${cmd}`);
-      console.log(`  ${c.gray}Type /help for commands. Press Tab for autocomplete.${c.reset}`);
-      gap();
-      break;
-  }
+function cmdExplain(topic) {
+  if (EXPLAINS[topic]) console.log(EXPLAINS[topic]);
+  else { err(`Unknown topic: ${topic}`); gap(); }
 }
 
 // ============================================================================
-// PROMPT
+// COMMAND ROUTER — handles both typed commands and menu results
 // ============================================================================
 
-function prompt() {
-  const w = activeWallet();
-  const walletTag = w ? `#${activeIdx + 1} ${shortAddr(w.publicKey)}` : 'no wallet';
-  const blocks = blockchain.chain.length;
-  const p = `  ${c.purple}anvil${c.reset} ${c.dim}[${blocks} blocks]${c.reset} ${c.gray}(${walletTag})${c.reset} ${c.cyan}>${c.reset} `;
+async function handleAction(action) {
+  switch (action) {
+    case 'help':           await runMenu(); return;
+    case 'wallet create':  cmdWalletCreate(); break;
+    case 'wallet list':    cmdWalletList(); break;
+    case 'wallet switch': {
+      const idx = await menuWalletSwitch();
+      if (idx !== null) cmdWalletSwitch(idx);
+      break;
+    }
+    case 'wallet info':    cmdWalletInfo(); break;
+    case 'wallet load': {
+      const fp = await menuWalletLoad();
+      if (fp) cmdWalletLoad(fp);
+      break;
+    }
+    case 'mine':           cmdMine(); break;
+    case 'balance':        cmdBalance(); break;
+    case 'send': {
+      const data = await menuSend();
+      if (data) cmdSend(data.address, data.amount);
+      break;
+    }
+    case 'chain':          cmdChain(); break;
+    case 'pending':        cmdPending(); break;
+    case 'validate':       cmdValidate(); break;
+    case 'info':           cmdInfo(); break;
+    case 'explain': {
+      const topic = await menuExplain();
+      cmdExplain(topic);
+      break;
+    }
+    case 'clear':          console.clear(); break;
+    case 'exit':
+      console.log(`\n  ${c.gray}Goodbye. Run ${c.cyan}anvil-chain${c.gray} to start again.${c.reset}\n`);
+      process.exit(0);
+    default:
+      err(`Unknown: ${action}`);
+      console.log(`  ${c.gray}Type /help for menu. Press Tab for autocomplete.${c.reset}`);
+      gap();
+  }
+}
 
-  rl.question(p, (input) => {
-    handleInput(input);
+async function runMenu() {
+  const action = await menuMain();
+  await handleAction(action);
+}
+
+// ============================================================================
+// TYPED INPUT PARSER — maps raw text to actions
+// ============================================================================
+
+function parseInput(raw) {
+  const trimmed = raw.trim();
+  if (!trimmed) return null;
+  const norm = trimmed.startsWith('/') ? trimmed.substring(1) : trimmed;
+  const parts = norm.split(/\s+/);
+  const cmd = parts[0]?.toLowerCase();
+  const sub_ = parts[1]?.toLowerCase();
+  const rest = parts.slice(2);
+
+  // Direct mappings
+  if (cmd === 'help' || cmd === 'h') return { action: 'help' };
+  if (cmd === 'clear' || cmd === 'cls') return { action: 'clear' };
+  if (cmd === 'exit' || cmd === 'quit' || cmd === 'q') return { action: 'exit' };
+  if (cmd === 'mine') return { action: 'mine' };
+  if (cmd === 'balance' || cmd === 'bal') return { action: 'balance' };
+  if (cmd === 'chain') return { action: 'chain' };
+  if (cmd === 'pending' || cmd === 'mempool') return { action: 'pending' };
+  if (cmd === 'validate') return { action: 'validate' };
+  if (cmd === 'info') return { action: 'info' };
+
+  // Wallet subcommands
+  if (cmd === 'wallet' || cmd === 'w') {
+    if (sub_ === 'create' || sub_ === 'new') return { action: 'wallet create' };
+    if (sub_ === 'list' || sub_ === 'ls') return { action: 'wallet list' };
+    if (sub_ === 'info' || sub_ === 'show') return { action: 'wallet info' };
+    if (sub_ === 'switch' || sub_ === 'use') {
+      const num = parseInt(rest[0]);
+      if (!isNaN(num) && num >= 1 && num <= wallets.length)
+        return { action: 'wallet switch direct', idx: num - 1 };
+      return { action: 'wallet switch' }; // open menu
+    }
+    if (sub_ === 'load') {
+      if (rest[0]) return { action: 'wallet load direct', path: rest[0] };
+      return { action: 'wallet load' }; // open menu
+    }
+    return { action: 'wallet unknown' };
+  }
+
+  // Send — can be typed directly or open menu
+  if (cmd === 'send') {
+    const addr = parts[1];
+    const amt = parseFloat(parts[2]);
+    if (addr && !isNaN(amt)) return { action: 'send direct', address: addr, amount: amt };
+    return { action: 'send' }; // open interactive menu
+  }
+
+  // Explain
+  if (cmd === 'explain' || cmd === 'ex' || cmd === 'learn') {
+    if (sub_ && sub_ !== 'list' && EXPLAINS[sub_]) return { action: 'explain direct', topic: sub_ };
+    return { action: 'explain' }; // open menu
+  }
+
+  return { action: cmd };
+}
+
+// ============================================================================
+// MAIN LOOP
+// ============================================================================
+
+const COMMANDS = [
+  '/help','/wallet create','/wallet list','/wallet switch','/wallet info','/wallet load',
+  '/balance','/send','/mine','/chain','/pending','/validate','/info',
+  '/explain','/explain mine','/explain wallet','/explain transaction','/explain block',
+  '/explain chain','/explain consensus','/explain difficulty','/explain reward',
+  '/explain hash','/explain genesis','/clear','/exit',
+];
+
+function completer(line) {
+  const hits = COMMANDS.filter(c => c.startsWith(line));
+  return [hits.length ? hits : COMMANDS, line];
+}
+
+const rl = readline.createInterface({
+  input: process.stdin,
+  output: process.stdout,
+  completer,
+});
+
+async function prompt() {
+  if (rl.closed) return;
+  const wl = w();
+  const tag = wl ? `#${activeIdx+1} ${short(wl.publicKey)}` : 'no wallet';
+  const blocks = blockchain.chain.length;
+  const p = `  ${c.purple}anvil${c.reset} ${c.dim}[${blocks} blocks]${c.reset} ${c.gray}(${tag})${c.reset} ${c.cyan}>${c.reset} `;
+
+  rl.question(p, async (input) => {
+    const parsed = parseInput(input);
+    if (!parsed) { prompt(); return; }
+
+    // Handle direct-data actions without opening menus
+    switch (parsed.action) {
+      case 'wallet switch direct': cmdWalletSwitch(parsed.idx); break;
+      case 'wallet load direct':   cmdWalletLoad(parsed.path); break;
+      case 'send direct':          cmdSend(parsed.address, parsed.amount); break;
+      case 'explain direct':       cmdExplain(parsed.topic); break;
+      case 'wallet unknown':
+        err('Usage: /wallet <create|list|switch|info|load>'); gap(); break;
+      default:
+        // Close readline temporarily so inquirer can take over
+        rl.pause();
+        try { await handleAction(parsed.action); } catch(e) {}
+        rl.resume();
+        break;
+    }
+
     prompt();
   });
 }
@@ -638,24 +617,33 @@ function prompt() {
 // STARTUP
 // ============================================================================
 
-console.log('');
-console.log(`  ${c.dim}${'='.repeat(58)}${c.reset}`);
-console.log('');
-console.log(`  ${c.bold}${c.purple}   ___    _   ___    __ ___  _     ${c.reset}`);
-console.log(`  ${c.bold}${c.purple}  / _ |  / | / / |  / //  / / /    ${c.reset}`);
-console.log(`  ${c.bold}${c.purple} / __ | /  |/ /| | / // / / / /__  ${c.reset}`);
-console.log(`  ${c.bold}${c.purple}/_/ |_|/_/|__/ |_|/_//_/ /_/____/  ${c.reset}`);
-console.log(`  ${c.bold}${c.purple}              C H A I N            ${c.reset}`);
-console.log('');
-console.log(`  ${c.dim}${'='.repeat(58)}${c.reset}`);
-console.log(`  ${c.gray}A sandbox recreation of Bitcoin's core mechanics.${c.reset}`);
-console.log(`  ${c.gray}Not real cryptocurrency. Built for learning.${c.reset}`);
-console.log('');
-console.log(`  ${c.gray}Command:    ${c.bold}${c.cyan}anvil-chain${c.reset}`);
-console.log(`  ${c.gray}Help:       ${c.cyan}/help${c.reset}`);
-console.log(`  ${c.gray}Learn:      ${c.cyan}/explain mine${c.reset}`);
-console.log(`  ${c.gray}Autocomplete: ${c.cyan}Tab${c.reset}`);
-console.log(`  ${c.dim}${'='.repeat(58)}${c.reset}`);
-console.log('');
+async function main() {
+  // Load inquirer (ESM module)
+  inquirer = await import('inquirer');
 
-prompt();
+  rl.on('close', () => process.exit(0));
+
+  console.log('');
+  console.log(`  ${c.dim}${'='.repeat(58)}${c.reset}`);
+  console.log('');
+  console.log(`  ${c.bold}${c.purple}   ___    _   ___    __ ___  _     ${c.reset}`);
+  console.log(`  ${c.bold}${c.purple}  / _ |  / | / / |  / //  / / /    ${c.reset}`);
+  console.log(`  ${c.bold}${c.purple} / __ | /  |/ /| | / // / / / /__  ${c.reset}`);
+  console.log(`  ${c.bold}${c.purple}/_/ |_|/_/|__/ |_|/_//_/ /_/____/  ${c.reset}`);
+  console.log(`  ${c.bold}${c.purple}              C H A I N            ${c.reset}`);
+  console.log('');
+  console.log(`  ${c.dim}${'='.repeat(58)}${c.reset}`);
+  console.log(`  ${c.gray}A sandbox recreation of Bitcoin's core mechanics.${c.reset}`);
+  console.log(`  ${c.gray}Not real cryptocurrency. Built for learning.${c.reset}`);
+  console.log('');
+  console.log(`  ${c.gray}Command:      ${c.bold}${c.cyan}anvil-chain${c.reset}`);
+  console.log(`  ${c.gray}Menu:         ${c.cyan}/help${c.gray}  (arrow keys to pick)${c.reset}`);
+  console.log(`  ${c.gray}Autocomplete: ${c.cyan}Tab${c.reset}`);
+  console.log(`  ${c.gray}Type freely:  ${c.cyan}/mine${c.gray}, ${c.cyan}/balance${c.gray}, ${c.cyan}/send${c.gray}, etc.${c.reset}`);
+  console.log(`  ${c.dim}${'='.repeat(58)}${c.reset}`);
+  console.log('');
+
+  prompt();
+}
+
+main();

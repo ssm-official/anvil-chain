@@ -14,9 +14,15 @@
     "node:3003": "PORT=3003 PEERS=http://localhost:3001,http://localhost:3002 node src/network/node.js",
     "landing": "npx serve landing -p 8080"
   },
-  "keywords": ["blockchain", "educational", "proof-of-work", "cryptocurrency"],
+  "keywords": [
+    "blockchain",
+    "educational",
+    "proof-of-work",
+    "cryptocurrency"
+  ],
   "license": "MIT",
   "dependencies": {
-    "express": "^4.18.2"
+    "express": "^4.18.2",
+    "inquirer": "^9.3.8"
   }
 }

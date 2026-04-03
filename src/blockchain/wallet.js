@@ -87,10 +87,15 @@ class Wallet {
   }
 
   // ---------------------------------------------------------------------------
-  // Get a short, readable version of the address (first 16 hex characters).
+  // Get a short, readable version of the address.
+  // Ed25519 DER-encoded public keys share the same prefix (302a300506032b6570),
+  // so we skip it and show the unique part (the actual key bytes).
   // ---------------------------------------------------------------------------
   get shortAddress() {
-    return this.publicKey ? this.publicKey.substring(0, 16) + '...' : 'none';
+    if (!this.publicKey) return 'none';
+    // DER prefix for Ed25519 SPKI is 24 hex chars (12 bytes). Skip it.
+    const unique = this.publicKey.length > 24 ? this.publicKey.substring(24) : this.publicKey;
+    return unique.substring(0, 12) + '...';
   }
 }
 

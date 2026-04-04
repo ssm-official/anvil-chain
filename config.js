@@ -13,9 +13,9 @@ module.exports = {
   COIN_SYMBOL: 'ANV',       // Bitcoin: "BTC"
 
   // ------ Mining ------
-  MINING_DIFFICULTY: 3,      // Number of leading zeros required in block hash.
+  MINING_DIFFICULTY: 5,      // Number of leading zeros required in block hash.
+                             // 3 = instant, 4 = ~1 second, 5 = ~5-30 seconds
                              // Bitcoin started at difficulty ~1, now it's ~80+ trillion.
-                             // We keep it low so mining takes ~1 second, not ~10 minutes.
                              // In real Bitcoin, difficulty adjusts every 2016 blocks.
 
   BLOCK_REWARD: 50,          // Starting reward. Bitcoin also started at 50 BTC.

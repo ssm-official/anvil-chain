@@ -1,23 +1,22 @@
 // ============================================================================
 // Blockchain (Chain)
 // ============================================================================
-// The chain is the core data structure — an ordered list of blocks, each
-// pointing back to the previous one via its hash.
+// The chain is the core data structure — modeled after Bitcoin.
 //
-// This class manages:
-//   - Creating the genesis (first) block
-//   - Adding transactions to a pending pool
-//   - Mining new blocks from pending transactions
-//   - Validating the entire chain's integrity
-//   - Calculating balances for any address
-//   - Preventing double-spending
+// Bitcoin-matching features:
+//   - Block reward halving (every HALVING_INTERVAL blocks)
+//   - Maximum supply cap (21,000,000 like Bitcoin)
+//   - Coinbase (mining reward) transactions
+//   - Burn address (permanently destroy coins)
+//   - Double-spend prevention
+//   - Longest chain consensus
 //
-// SECURITY NOTES:
-//   - Balance checks happen BEFORE a transaction enters the pending pool.
-//   - The chain is validated end-to-end whenever a new chain is received
-//     from a peer (longest valid chain wins).
-//   - This is educational code. A production chain would need Merkle trees,
-//     UTXO sets, mempool prioritization, and much more.
+// Supply economics:
+//   - New coins ONLY enter circulation through mining rewards
+//   - Reward halves: 50 -> 25 -> 12.5 -> 6.25 -> 3.125 -> ...
+//   - Once MAX_SUPPLY is reached, no more rewards (miners get nothing)
+//   - Coins sent to BURN_ADDRESS are permanently unspendable
+//   - Circulating supply = total mined - total burned
 // ============================================================================
 
 const Block = require('./block');
@@ -29,44 +28,158 @@ class Blockchain {
     this.chain = [this.createGenesisBlock()];
     this.pendingTransactions = [];
     this.difficulty = config.MINING_DIFFICULTY;
-    this.blockReward = config.BLOCK_REWARD;
     this.maxTxPerBlock = config.MAX_TRANSACTIONS_PER_BLOCK;
   }
 
   // ---------------------------------------------------------------------------
-  // Genesis Block
-  // ---------------------------------------------------------------------------
-  // The genesis block is the very first block in the chain. It has no
-  // predecessor, so its previousHash is '0'. Every blockchain starts here.
+  // Genesis Block — block #0, the anchor of the entire chain.
+  // Bitcoin's was mined January 3, 2009 by Satoshi Nakamoto.
   // ---------------------------------------------------------------------------
   createGenesisBlock() {
     const genesisTx = new Transaction('MINING_REWARD', 'genesis', 0);
     const block = new Block(0, [genesisTx], '0');
-    block.timestamp = 0; // Fixed timestamp so the genesis hash is deterministic
+    block.timestamp = 0;
     block.hash = block.computeHash();
     return block;
   }
 
-  // ---------------------------------------------------------------------------
-  // Get the most recent block (we need its hash to link the next block).
-  // ---------------------------------------------------------------------------
   getLatestBlock() {
     return this.chain[this.chain.length - 1];
   }
 
   // ---------------------------------------------------------------------------
-  // Add a transaction to the pending pool.
+  // BLOCK REWARD with HALVING
+  // ---------------------------------------------------------------------------
+  // Bitcoin halves the reward every 210,000 blocks:
+  //   Block 0-209999:      50 BTC
+  //   Block 210000-419999:  25 BTC
+  //   Block 420000-629999:  12.5 BTC
+  //   ...and so on until the reward rounds to 0.
   //
-  // Before accepting, we check:
-  //   1. Transaction is cryptographically valid (signed correctly).
-  //   2. Sender has enough balance (prevents double-spending).
-  //   3. Amount is positive.
-  //
-  // DOUBLE-SPEND PREVENTION:
-  //   We check the sender's balance against BOTH confirmed transactions
-  //   (in the chain) AND pending transactions (not yet mined). This stops
-  //   someone from sending their entire balance in two separate transactions
-  //   before either is mined.
+  // We do the same, but with HALVING_INTERVAL from config (default 100).
+  // This lets you see halvings happen quickly in the sandbox.
+  // ---------------------------------------------------------------------------
+  getCurrentReward() {
+    const halvings = Math.floor(this.chain.length / (config.HALVING_INTERVAL || 210000));
+    let reward = config.BLOCK_REWARD;
+
+    for (let i = 0; i < halvings; i++) {
+      reward = reward / 2;
+    }
+
+    // Once the reward is negligibly small, it's effectively 0
+    // Bitcoin uses integer satoshis so it eventually hits exactly 0
+    if (reward < 0.00000001) return 0;
+
+    // Check if we'd exceed max supply
+    const totalMined = this.getTotalMined();
+    if (totalMined + reward > config.MAX_SUPPLY) {
+      // Only mint what's left
+      const remaining = config.MAX_SUPPLY - totalMined;
+      return remaining > 0 ? remaining : 0;
+    }
+
+    return reward;
+  }
+
+  // ---------------------------------------------------------------------------
+  // SUPPLY TRACKING
+  // ---------------------------------------------------------------------------
+
+  // Total coins ever mined (all coinbase rewards)
+  getTotalMined() {
+    let total = 0;
+    for (const block of this.chain) {
+      for (const tx of block.transactions) {
+        if (tx.sender === 'MINING_REWARD') {
+          total += tx.amount;
+        }
+      }
+    }
+    return total;
+  }
+
+  // Total coins sent to the burn address (permanently destroyed)
+  getTotalBurned() {
+    let burned = 0;
+    const burnAddr = config.BURN_ADDRESS;
+    for (const block of this.chain) {
+      for (const tx of block.transactions) {
+        if (tx.receiver === burnAddr) {
+          burned += tx.amount;
+        }
+      }
+    }
+    return burned;
+  }
+
+  // Circulating supply = mined - burned
+  getCirculatingSupply() {
+    return this.getTotalMined() - this.getTotalBurned();
+  }
+
+  // How many blocks until the next halving?
+  getBlocksUntilHalving() {
+    const interval = config.HALVING_INTERVAL || 210000;
+    return interval - (this.chain.length % interval);
+  }
+
+  // Current halving epoch (0 = first era, 1 = after first halving, etc.)
+  getHalvingEpoch() {
+    return Math.floor(this.chain.length / (config.HALVING_INTERVAL || 210000));
+  }
+
+  // Simulated price based on stock-to-flow model
+  // S2F = stock / flow, where stock = circulating supply, flow = annual production
+  // This is a very rough simulation — real Bitcoin price is driven by markets
+  // Simulated price based on scarcity (stock-to-flow inspired).
+  // As more coins are mined and supply gets scarcer (halvings), price rises.
+  // This is educational — real Bitcoin price is set by market supply & demand.
+  getSimulatedPrice() {
+    const circulating = this.getCirculatingSupply();
+    const reward = this.getCurrentReward();
+    const blocks = this.chain.length;
+
+    if (circulating <= 0 || blocks <= 1) return 0;
+
+    // Scarcity factor: how much of max supply is left?
+    // As supply gets mined, remaining shrinks, price goes up
+    const percentMined = circulating / config.MAX_SUPPLY;
+    const scarcity = 1 / (1 - percentMined + 0.01); // approaches infinity near max
+
+    // Halving factor: each halving roughly doubles the price
+    const epoch = this.getHalvingEpoch();
+    const halvingMultiplier = Math.pow(2, epoch);
+
+    // Base price grows with blocks (adoption over time)
+    const adoption = Math.log2(blocks + 1);
+
+    // Burn bonus: burned coins increase scarcity
+    const burnBonus = 1 + (this.getTotalBurned() / (circulating + 1)) * 0.5;
+
+    const price = 0.01 * adoption * halvingMultiplier * scarcity * burnBonus;
+
+    return Math.round(price * 100) / 100;
+  }
+
+  // Full supply stats in one call
+  getSupplyStats() {
+    const reward = this.getCurrentReward();
+    return {
+      totalMined: this.getTotalMined(),
+      totalBurned: this.getTotalBurned(),
+      circulating: this.getCirculatingSupply(),
+      maxSupply: config.MAX_SUPPLY,
+      percentMined: ((this.getTotalMined() / config.MAX_SUPPLY) * 100).toFixed(4),
+      currentReward: reward,
+      halvingEpoch: this.getHalvingEpoch(),
+      blocksUntilHalving: this.getBlocksUntilHalving(),
+      simulatedPrice: this.getSimulatedPrice(),
+    };
+  }
+
+  // ---------------------------------------------------------------------------
+  // Add transaction — with burn address support
   // ---------------------------------------------------------------------------
   addTransaction(transaction) {
     if (!transaction.sender || !transaction.receiver) {
@@ -82,7 +195,11 @@ class Blockchain {
         throw new Error('Transaction amount must be greater than zero.');
       }
 
-      // Check balance including pending transactions
+      // Can't send FROM the burn address (those coins are gone)
+      if (transaction.sender === config.BURN_ADDRESS) {
+        throw new Error('Cannot send from the burn address. Those coins are destroyed.');
+      }
+
       const balance = this.getBalance(transaction.sender);
       const pendingOutgoing = this.pendingTransactions
         .filter(tx => tx.sender === transaction.sender)
@@ -101,29 +218,28 @@ class Blockchain {
   }
 
   // ---------------------------------------------------------------------------
-  // Mine a new block.
-  //
-  // Steps:
-  //   1. Take up to MAX_TRANSACTIONS_PER_BLOCK from the pending pool.
-  //   2. Add a "coinbase" reward transaction (new coins for the miner).
-  //   3. Create a new block linking to the previous one.
-  //   4. Run proof-of-work (find a valid nonce).
-  //   5. Append the block to the chain.
-  //
-  // The mining reward is how new coins enter circulation — just like
-  // Bitcoin miners receive BTC for each block they mine.
+  // Mine — uses getCurrentReward() for halving-aware rewards
   // ---------------------------------------------------------------------------
   minePendingTransactions(minerAddress) {
-    // Take a batch of pending transactions
     const txBatch = this.pendingTransactions.slice(0, this.maxTxPerBlock);
 
-    // Create the coinbase (mining reward) transaction
-    const rewardTx = new Transaction('MINING_REWARD', minerAddress, this.blockReward);
+    // Get the halving-aware reward
+    const reward = this.getCurrentReward();
 
-    // The reward tx goes first in the block (convention from Bitcoin)
+    // Create coinbase transaction (may be 0 if max supply reached)
+    const rewardTx = new Transaction('MINING_REWARD', minerAddress, reward);
     const blockTransactions = [rewardTx, ...txBatch];
 
     console.log(`\n  Creating block #${this.chain.length} with ${blockTransactions.length} transaction(s)...`);
+
+    if (reward < config.BLOCK_REWARD) {
+      const epoch = this.getHalvingEpoch();
+      console.log(`  Halving epoch ${epoch}: reward is now ${reward} ${config.COIN_SYMBOL} (was ${config.BLOCK_REWARD})`);
+    }
+
+    if (reward === 0) {
+      console.log(`  MAX SUPPLY REACHED. No more coins will be created.`);
+    }
 
     const newBlock = new Block(
       this.chain.length,
@@ -132,86 +248,66 @@ class Blockchain {
     );
 
     newBlock.mine(this.difficulty);
-
     this.chain.push(newBlock);
 
-    // Remove mined transactions from the pending pool
     this.pendingTransactions = this.pendingTransactions.slice(txBatch.length);
 
     console.log(`  Block #${newBlock.index} added to chain.`);
-    console.log(`  Miner reward: +${this.blockReward} ${config.COIN_SYMBOL} to ${minerAddress.substring(0, 16)}...`);
+    if (reward > 0) {
+      console.log(`  Miner reward: +${reward} ${config.COIN_SYMBOL}`);
+    }
 
-    if (this.pendingTransactions.length > 0) {
-      console.log(`  ${this.pendingTransactions.length} transaction(s) still pending.`);
+    // Check if halving is coming soon
+    const untilHalving = this.getBlocksUntilHalving();
+    if (untilHalving <= 10 && untilHalving > 0) {
+      console.log(`  ${untilHalving} blocks until next halving!`);
     }
 
     return newBlock;
   }
 
   // ---------------------------------------------------------------------------
-  // Calculate the balance for an address.
-  //
-  // We scan every transaction in every block:
-  //   - If the address is the receiver, add the amount.
-  //   - If the address is the sender, subtract the amount.
-  //
-  // NOTE: This is the simple approach. Bitcoin uses UTXOs (unspent transaction
-  // outputs) for better performance. We use the simpler method for clarity.
+  // Balance — coins at burn address are technically there but unspendable
   // ---------------------------------------------------------------------------
   getBalance(address) {
     let balance = 0;
-
     for (const block of this.chain) {
       for (const tx of block.transactions) {
         if (tx.sender === address) balance -= tx.amount;
         if (tx.receiver === address) balance += tx.amount;
       }
     }
-
     return balance;
   }
 
   // ---------------------------------------------------------------------------
-  // Validate the entire chain.
-  //
-  // For each block (starting after genesis), we check:
-  //   1. The stored hash matches a freshly computed hash (no tampering).
-  //   2. The previousHash matches the actual hash of the prior block (links).
-  //   3. All transactions in the block have valid signatures.
-  //
-  // If ANY check fails, the chain is invalid.
+  // Validation
   // ---------------------------------------------------------------------------
   isValid() {
     for (let i = 1; i < this.chain.length; i++) {
       const current = this.chain[i];
       const previous = this.chain[i - 1];
 
-      // Recompute the hash — does it match what's stored?
       if (current.hash !== current.computeHash()) {
         console.log(`  [!] Block #${i} hash mismatch (data was tampered with).`);
         return false;
       }
 
-      // Does this block correctly point to the previous block?
       if (current.previousHash !== previous.hash) {
         console.log(`  [!] Block #${i} previousHash doesn't match block #${i - 1}.`);
         return false;
       }
 
-      // Are all transactions in this block valid?
       if (!current.hasValidTransactions()) {
         console.log(`  [!] Block #${i} contains invalid transactions.`);
         return false;
       }
     }
-
     return true;
   }
 
   // ---------------------------------------------------------------------------
-  // Replace the chain if a longer valid chain is received from a peer.
-  // This is the "longest chain rule" — the chain with the most proof-of-work
-  // (longest valid chain) is considered the truth.
+  // Consensus — longest valid chain wins
   // ---------------------------------------------------------------------------
   replaceChain(newChain) {
     if (newChain.length <= this.chain.length) {
@@ -219,7 +315,6 @@ class Blockchain {
       return false;
     }
 
-    // Build a temporary blockchain to validate the incoming chain
     const tempChain = new Blockchain();
     tempChain.chain = newChain;
 

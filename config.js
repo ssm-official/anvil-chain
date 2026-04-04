@@ -18,15 +18,27 @@ module.exports = {
                              // We keep it low so mining takes ~1 second, not ~10 minutes.
                              // In real Bitcoin, difficulty adjusts every 2016 blocks.
 
-  BLOCK_REWARD: 50,          // Coins awarded to the miner of each block.
-                             // Bitcoin also started at 50 BTC per block in 2009.
-                             // Bitcoin halves this every 210,000 blocks (~4 years).
-                             // Current Bitcoin reward: 3.125 BTC (after 4 halvings).
+  BLOCK_REWARD: 50,          // Starting reward. Bitcoin also started at 50 BTC.
+                             // This halves at HALVING_INTERVAL.
+
+  // ------ Supply Economics (like Bitcoin) ------
+  MAX_SUPPLY: 21000000,      // Maximum coins that will ever exist.
+                             // Bitcoin: exactly 21,000,000 BTC. Not one more.
+
+  HALVING_INTERVAL: 100,     // Reward halves every N blocks.
+                             // Bitcoin: every 210,000 blocks (~4 years).
+                             // We use 100 so you can see halvings happen quickly.
+                             // 50 -> 25 -> 12.5 -> 6.25 -> 3.125 etc.
+
+  BURN_ADDRESS: 'BURN_000000000000000000000000000000000000',
+  // Coins sent here are permanently destroyed (unspendable).
+  // Bitcoin equivalent: sending to an address with no known private key,
+  // like 1111111111111111111114oLvT2. Those coins are gone forever.
+  // Common reasons to burn: reduce supply, prove commitment, destroy tokens.
 
   // ------ Block Limits ------
   MAX_TRANSACTIONS_PER_BLOCK: 10,  // Max transactions per block.
-                                    // Bitcoin's limit is based on block weight
-                                    // (~4MB), not a fixed transaction count.
+                                    // Bitcoin: ~2000-3000 per block (~4MB weight limit).
 
   // ------ Network ------
   DEFAULT_PORT: 3001,        // Default port for the node HTTP server.

@@ -103,6 +103,8 @@ async function runMenu() {
       { name: 'View mempool', value: 'pending' },
       { name: 'Validate chain', value: 'validate' },
       { name: 'Chain stats', value: 'info' },
+      { name: 'Supply & economics', value: 'supply' },
+      { name: 'Burn coins (destroy forever)', value: 'burn' },
       new inq.Separator(`${c.dim}--- Learn ---${c.reset}`),
       { name: 'Explain a topic (how Bitcoin works)', value: 'explain' },
       new inq.Separator(`${c.dim}--- System ---${c.reset}`),
@@ -132,6 +134,8 @@ async function runAction(action) {
     case 'pending':       cmdPending(); break;
     case 'validate':      cmdValidate(); break;
     case 'info':          cmdInfo(); break;
+    case 'supply':        cmdSupply(); break;
+    case 'burn':          await interactiveBurn(); break;
     case 'explain':       await interactiveExplain(); break;
     case 'clear':         console.clear(); break;
     case 'exit':
@@ -160,6 +164,9 @@ async function interactiveExplain() {
       { name: 'Difficulty — what controls mining speed', value: 'difficulty' },
       { name: 'Block Reward — how new coins are created', value: 'reward' },
       { name: 'Hashing — SHA-256 and why it matters', value: 'hash' },
+      { name: 'Halving — why rewards decrease over time', value: 'halving' },
+      { name: 'Burning — permanently destroying coins', value: 'burning' },
+      { name: 'Supply — how coin economics work', value: 'supply' },
       { name: 'Genesis Block — where it all started', value: 'genesis' },
     ],
   }]);
@@ -211,6 +218,33 @@ async function interactiveSend() {
   cmdSend(address.trim(), parseFloat(amount));
 }
 
+async function interactiveBurn() {
+  if (!needW()) return;
+  const bal = blockchain.getBalance(aw().publicKey);
+  console.log(`\n  ${c.yellow}WARNING: Burned coins are destroyed permanently. There is no undo.${c.reset}`);
+  console.log(`  ${c.gray}Your balance: ${bal} ${config.COIN_SYMBOL}${c.reset}`);
+  console.log(`  ${c.gray}Burn address: ${config.BURN_ADDRESS}${c.reset}`);
+  gap();
+
+  const { amount, confirm } = await inq.prompt([
+    {
+      type: 'input',
+      name: 'amount',
+      message: `Amount to burn (${config.COIN_SYMBOL}):`,
+      validate: v => (!isNaN(parseFloat(v)) && parseFloat(v) > 0) || 'Enter a positive number',
+    },
+    {
+      type: 'confirm',
+      name: 'confirm',
+      message: 'This is irreversible. Are you sure?',
+      default: false,
+    },
+  ]);
+
+  if (!confirm) { console.log(`  ${c.gray}Burn cancelled.${c.reset}`); gap(); return; }
+  cmdBurn(parseFloat(amount));
+}
+
 // ============================================================================
 // TYPED COMMAND HANDLER — parses /slash commands typed directly
 // ============================================================================
@@ -235,6 +269,11 @@ async function handleTyped(raw) {
     case 'pending': case 'mempool': cmdPending(); return;
     case 'validate': cmdValidate(); return;
     case 'info': cmdInfo(); return;
+    case 'supply': case 'economics': case 'stats': cmdSupply(); return;
+    case 'burn':
+      if (parts[1] && !isNaN(parseFloat(parts[1]))) { cmdBurn(parseFloat(parts[1])); return; }
+      await interactiveBurn(); return;
+    case 'price': cmdSupply(); return;
 
     case 'wallet': case 'w':
       if (sub_ === 'create' || sub_ === 'new') { cmdWalletCreate(); return; }
@@ -372,6 +411,71 @@ hash: `
   Deterministic, one-way, avalanche effect, collision-resistant.
 
   Both Bitcoin and this sandbox use SHA-256.
+`,
+halving: `
+  ${c.bold}${c.white}What is the halving?${c.reset}
+
+  Every ${config.HALVING_INTERVAL} blocks, the mining reward cuts in half:
+    50 -> 25 -> 12.5 -> 6.25 -> 3.125 -> ...
+
+  This makes the coin increasingly scarce over time — fewer new coins
+  enter circulation with each era. Eventually the reward reaches 0
+  and no more coins will ever be created.
+
+  ${c.cyan}In Bitcoin:${c.reset}
+    Halves every 210,000 blocks (~4 years). Four halvings so far:
+    50 (2009) -> 25 (2012) -> 12.5 (2016) -> 6.25 (2020) -> 3.125 (2024)
+    Last BTC will be mined around year 2140. Cap: 21,000,000 BTC.
+    Each halving has historically preceded major price increases.
+
+  ${c.yellow}In this sandbox:${c.reset}
+    Halves every ${config.HALVING_INTERVAL} blocks so you can see it happen quickly.
+    Same math, same cap (${config.MAX_SUPPLY.toLocaleString()} ${config.COIN_SYMBOL}).
+`,
+burning: `
+  ${c.bold}${c.white}What is burning?${c.reset}
+
+  Burning = sending coins to an address nobody owns (no private key).
+  Those coins are permanently unspendable — destroyed forever.
+
+  Why burn?
+    - Reduce circulating supply (deflationary pressure)
+    - Prove commitment (proof-of-burn)
+    - Destroy tokens from a project's treasury
+
+  ${c.cyan}In Bitcoin:${c.reset}
+    ~4 million BTC are estimated to be permanently lost/burned.
+    That's ~19% of all Bitcoin that will ever exist — gone forever.
+    Satoshi's ~1.1M BTC have never moved and may be effectively burned.
+    Common burn method: send to 1111111111111111111114oLvT2
+
+  ${c.yellow}In this sandbox:${c.reset}
+    Use /burn <amount> to send coins to the burn address.
+    Burn address: ${config.BURN_ADDRESS}
+`,
+supply: `
+  ${c.bold}${c.white}How does supply work?${c.reset}
+
+  Total Supply = all coins ever mined (via coinbase rewards)
+  Burned = coins sent to the burn address (permanently destroyed)
+  Circulating = Total Mined - Burned
+
+  New coins ONLY enter through mining. There is no other way.
+  The supply schedule is mathematically predetermined by the
+  halving interval and starting reward.
+
+  ${c.cyan}In Bitcoin:${c.reset}
+    Max: 21,000,000 BTC (hardcoded, cannot be changed)
+    Currently mined: ~19.6M BTC (~93%)
+    Lost/burned: ~4M BTC (estimated)
+    New BTC per day: ~450 (at 3.125 BTC/block, 144 blocks/day)
+    Stock-to-flow ratio used by some to model price
+
+  ${c.yellow}In this sandbox:${c.reset}
+    Max: ${config.MAX_SUPPLY.toLocaleString()} ${config.COIN_SYMBOL}
+    Use /supply to see full economics dashboard
+    Use /burn to destroy coins
+    Simulated price uses stock-to-flow model
 `,
 genesis: `
   ${c.bold}${c.white}What is the genesis block?${c.reset}
@@ -528,6 +632,8 @@ function cmdValidate() {
 }
 
 function cmdInfo() {
+  const stats = blockchain.getSupplyStats();
+
   header(`${config.COIN_NAME} Info`);
   gap();
   row('Coin', `${config.COIN_NAME} (${config.COIN_SYMBOL})`);
@@ -535,14 +641,89 @@ function cmdInfo() {
   gap();
   row('Blocks', blockchain.chain.length);
   row('Difficulty', blockchain.difficulty);
-  row('Block Reward', `${blockchain.blockReward} ${config.COIN_SYMBOL}`);
+  row('Block Reward', `${stats.currentReward} ${config.COIN_SYMBOL}`);
   row('Pending Tx', blockchain.pendingTransactions.length);
+  gap();
+  row('Circulating', `${stats.circulating} ${config.COIN_SYMBOL}`);
+  row('Max Supply', `${config.MAX_SUPPLY.toLocaleString()} ${config.COIN_SYMBOL}`);
+  row('Mined', `${stats.percentMined}%`);
+  if (stats.totalBurned > 0) row('Burned', `${stats.totalBurned} ${config.COIN_SYMBOL}`);
+  row('Price', `$${stats.simulatedPrice} (simulated)`);
+  gap();
+  row('Halving Epoch', stats.halvingEpoch);
+  row('Next Halving', `in ${stats.blocksUntilHalving} blocks`);
   gap();
   row('Hashing', 'SHA-256');
   row('Signatures', 'Ed25519');
   row('Consensus', 'Longest valid chain (Nakamoto)');
   row('Wallets', `${wallets.length} loaded`);
   gap();
+}
+
+function cmdSupply() {
+  const stats = blockchain.getSupplyStats();
+
+  header(`${config.COIN_NAME} Supply & Economics`);
+  gap();
+
+  // Supply bar visualization
+  const pct = parseFloat(stats.percentMined);
+  const barLen = 40;
+  const filled = Math.round((pct / 100) * barLen);
+  const bar = `${c.green}${'#'.repeat(filled)}${c.dim}${'-'.repeat(barLen - filled)}${c.reset}`;
+  console.log(`  ${bar}  ${pct}%`);
+  gap();
+
+  sub('Supply');
+  row('Total Mined', `${stats.totalMined} ${config.COIN_SYMBOL}`);
+  row('Total Burned', `${stats.totalBurned} ${config.COIN_SYMBOL}`);
+  row('Circulating', `${c.bold}${c.green}${stats.circulating} ${config.COIN_SYMBOL}${c.reset}`);
+  row('Max Supply', `${config.MAX_SUPPLY.toLocaleString()} ${config.COIN_SYMBOL}`);
+  row('Remaining', `${(config.MAX_SUPPLY - stats.totalMined).toLocaleString()} ${config.COIN_SYMBOL}`);
+  gap();
+
+  sub('Mining Economics');
+  row('Current Reward', `${stats.currentReward} ${config.COIN_SYMBOL} per block`);
+  row('Halving Epoch', `${stats.halvingEpoch} (reward started at ${config.BLOCK_REWARD})`);
+  row('Next Halving', `in ${stats.blocksUntilHalving} blocks (reward will become ${stats.currentReward / 2})`);
+  row('Halving Schedule', `every ${config.HALVING_INTERVAL} blocks`);
+  gap();
+
+  sub('Market (Simulated)');
+  row('Price', `${c.bold}${c.green}$${stats.simulatedPrice}${c.reset} per ${config.COIN_SYMBOL}`);
+  row('Market Cap', `$${(stats.simulatedPrice * stats.circulating).toFixed(2)}`);
+  console.log(`  ${c.dim}Price uses a stock-to-flow model: scarcer supply = higher price.${c.reset}`);
+  console.log(`  ${c.dim}This is a simulation — real Bitcoin price is set by markets.${c.reset}`);
+  gap();
+
+  sub('Burn');
+  row('Burn Address', config.BURN_ADDRESS);
+  row('Total Burned', `${stats.totalBurned} ${config.COIN_SYMBOL}`);
+  console.log(`  ${c.dim}Use /burn <amount> to permanently destroy coins.${c.reset}`);
+  gap();
+}
+
+function cmdBurn(amount) {
+  if (!needW()) return;
+
+  const balance = blockchain.getBalance(aw().publicKey);
+  if (balance < amount) {
+    err(`Insufficient balance. You have ${balance} ${config.COIN_SYMBOL}.`);
+    gap();
+    return;
+  }
+
+  try {
+    const tx = aw().createTransaction(config.BURN_ADDRESS, amount);
+    blockchain.addTransaction(tx);
+    ok(`${amount} ${config.COIN_SYMBOL} queued for burning.`);
+    row('From', short(aw().publicKey));
+    row('To', `${c.red}BURN ADDRESS${c.reset} (coins will be destroyed)`);
+    gap();
+    console.log(`  ${c.yellow}These coins will be permanently unspendable after mining.${c.reset}`);
+    console.log(`  ${c.gray}In Bitcoin, ~4M BTC are estimated lost/burned forever.${c.reset}`);
+    gap();
+  } catch (e) { err(e.message); gap(); }
 }
 
 function cmdExplain(topic) {
